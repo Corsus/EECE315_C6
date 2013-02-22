@@ -5,13 +5,16 @@
 #include<sys/wait.h>
 
 #define MAX_INPUT_LEN 100
+#define MAX_DIR_LEN 200
 #define MAX_ARGS 20
 
 typedef void (*function)(char *curDir, char ** args);
 
 int stringParser(char* line, char*** args, char *delimiter);
 void executeExternalCommand(char * command, char ** args);
-void cd(char *command, char **args);
+char* readFromPipe (int file);
+void writeToPipe (int file, char* input);
+void cd(char *curDir, char **args);
 
 int main(int argc, char *argv[]){
 	char ** args;
@@ -20,12 +23,13 @@ int main(int argc, char *argv[]){
 	function functions[] = {cd};
 	char inputBuffer[MAX_INPUT_LEN];
 	int i, argcount, isInternal;
-
-	curDir = getenv("PWD");
+	int commandCount = 0;
 
 	while(1){
+		curDir = getcwd(NULL, MAX_DIR_LEN);	
+
 		//Read input
-		printf("\n%s$: ", curDir);
+		printf("\n%s$%d: ", curDir, commandCount);
 		gets(inputBuffer);
 		
 		//Parse String
@@ -48,6 +52,7 @@ int main(int argc, char *argv[]){
 		for(i=0;internalCommands[i]!=(char *)0;i++){
 			if(strcmp(command,internalCommands[i]) == 0){
 				isInternal = 1;
+				commandCount++;
 				functions[i](curDir,args);
 				break;
 			}
@@ -55,12 +60,36 @@ int main(int argc, char *argv[]){
 		
 		if(isInternal == 0){
 			//Execute the External command
+			commandCount++;
 			executeExternalCommand(command,args);
 		}
 		free(args);
 	}
 
 	return;
+}
+
+char* readFromPipe (int file){
+	FILE *stream;
+	char *buffer;
+	int c,i;
+	buffer = (char*) malloc(MAX_DIR_LEN * sizeof(char*));
+	stream = fdopen (file, "r");
+	for(i=0; ((c = fgetc (stream)) != EOF); i++)
+		buffer[i] = c;
+	fclose (stream);
+	return buffer;
+}
+
+void writeToPipe (int file, char* input){
+	int i;
+	FILE *stream;
+	stream = fdopen (file, "w");
+	for(i=0;i<strlen(input);i++){
+		if(fputc(input[i],stream) == EOF)
+			printf("\nPrinting to pipe fail");
+	}
+	fclose (stream);
 }
 
 int stringParser(char* line, char*** args,char *delimiter) {
@@ -85,28 +114,50 @@ int stringParser(char* line, char*** args,char *delimiter) {
 
 void cd(char *curDir, char **args){
 	char ** fraggedDir;
-	char forwardSlash[] = "/";
+	char newCurDir[MAX_DIR_LEN];
+	char * parentCurDir;
 	int dirLen,i;
-	pid_t pid = fork();
+	int myPipe[2];
+	pid_t pid;
+
+	if(pipe(myPipe)){
+		printf("\nError creating Pipe");
+		return;
+	}
+
+	pid = fork();
 
 	if(pid == 0){ //Child Process
 		dirLen = stringParser(curDir, &fraggedDir, "/");
-		for(i=0;i<dirLen;i++){
-			printf("\ndir%d: %s", i, fraggedDir[i]);
-		}
-		if(strcmp("..",args[1]) == 0){
+		if(strcmp("..",args[1]) == 0){	//Going down one folder
 			curDir[0] = '\0';
 			for(i=0;i<dirLen-1;i++){
 				strcat(curDir,"/");
 				strcat(curDir,fraggedDir[i]);
 			}
-			printf("\nresult path: %s", curDir);
+			strcat(newCurDir,curDir);
 		}
+		else if(args[1][0] == '/'){	//absolute path
+			strcat(newCurDir,args[1]);
+		}
+		else{	//relative path
+			strcat(newCurDir,curDir);
+			strcat(newCurDir,"/");
+			strcat(newCurDir,args[1]);
+		}
+		close(myPipe[0]);
+		writeToPipe(myPipe[1],newCurDir);
 		exit(0);
 	}
 	else if(pid > 0){ //Parent Process
 		wait((int *)0);
-		printf("\ncd command complete");
+		close(myPipe[1]);
+		parentCurDir = readFromPipe(myPipe[0]);	
+		if(chdir(parentCurDir) != 0){
+			printf("\ncd command failed");
+		}else{
+			printf("\ncd command complete");
+		}
 	}
 	else{ //Error
 		printf("\nError creating the child process");
@@ -121,6 +172,7 @@ void executeExternalCommand(char * command, char ** args){
 	if(pid == 0){ //Child Process
 		execvp(command,args);
 		perror("Failed to execute command");
+		exit(0);
 	}
 	else if(pid > 0){ //Parent Process
 		wait((int *)0);
