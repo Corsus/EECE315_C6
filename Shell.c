@@ -32,7 +32,7 @@ int main(int argc, char *argv[]){
 
 		//Read input
 		do{
-		printf("\n%s$%d: ", curDir, commandCount);
+		printf("%s$%d: ", curDir, commandCount);
 		gets(inputBuffer);
 		}while(strlen(inputBuffer)==0);
 		
@@ -91,7 +91,7 @@ void writeToPipe (int file, char* input){
 	stream = fdopen (file, "w");
 	for(i=0;i<strlen(input);i++){
 		if(fputc(input[i],stream) == EOF)
-			printf("\nPrinting to pipe fail");
+			printf("Printing to pipe fail\n");
 	}
 	fclose (stream);
 }
@@ -123,7 +123,7 @@ void cd(char *curDir, char **args){
 	pid_t pid;
 
 	if(pipe(myPipe)){	//Create the pipe
-		printf("\nError creating Pipe");
+		printf("Error creating Pipe\n");
 		return;
 	}
 
@@ -139,13 +139,13 @@ void cd(char *curDir, char **args){
 		close(myPipe[1]);	//Close the output
 		parentCurDir = readFromPipe(myPipe[0]);		//Get the command
 		if(chdir(parentCurDir) != 0){	//Change the current directory
-			printf("\ncd command failed");
+			printf("cd command failed\n");
 		}else{
-			printf("\ncd command complete");
+			printf("cd command complete\n");
 		}
 	}
 	else{ //Error
-		printf("\nError creating the child process");
+		printf("Error creating the child process\n");
 	}
 	return;	
 }
@@ -162,10 +162,10 @@ void executeExternalCommandSync(char * command, char ** args){
 	}
 	else if(pid > 0){ //Parent Process
 		waitpid(pid,&status,0);
-		printf("\nCommand: %s complete", command);
+		printf("Command: %s complete\n", command);
 	}
 	else{ //Error
-		printf("\nError creating the child process");
+		printf("Error creating the child process\n");
 	}
 	return;
 }
@@ -183,7 +183,7 @@ void executeExternalCommandAsync(char * command, char ** args){
 		//Dont wait for the child to finish
 	}
 	else{ //Error
-		printf("\nError creating the child process");
+		printf("Error creating the child process\n");
 	}
 	return;
 }
