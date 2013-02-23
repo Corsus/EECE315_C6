@@ -31,8 +31,10 @@ int main(int argc, char *argv[]){
 		curDir = getcwd(NULL, MAX_DIR_LEN);	
 
 		//Read input
+		do{
 		printf("\n%s$%d: ", curDir, commandCount);
 		gets(inputBuffer);
+		}while(strlen(inputBuffer)==0);
 		
 		//Parse String
 		argcount = stringParser(inputBuffer, &args, " ");
