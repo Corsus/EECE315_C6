@@ -8,7 +8,7 @@
 #define MAX_DIR_LEN 200
 #define MAX_ARGS 20
 
-typedef void (*function)(char *curDir, char ** args);
+typedef void (*function)(char *curDir, char ** args);	//For internal functions
 
 int stringParser(char* line, char*** args, char *delimiter);
 void executeExternalCommandSync(char * command, char ** args);
@@ -18,15 +18,16 @@ void writeToPipe (int file, char* input);
 void cd(char *curDir, char **args);
 
 int main(int argc, char *argv[]){
-	char ** args;
+	char ** args;	//args list
 	char *command, *curDir;
-	char *internalCommands[] = {"cd",(char *)0};
-	function functions[] = {cd};
+	char *internalCommands[] = {"cd",(char *)0};	//List of internal commands
+	function functions[] = {cd};	//The list of functions (internal)
 	char inputBuffer[MAX_INPUT_LEN];
 	int i, argcount, isInternal;
 	int commandCount = 0;
 
 	while(1){
+		//Get Current Working Directory (CWD)
 		curDir = getcwd(NULL, MAX_DIR_LEN);	
 
 		//Read input
@@ -35,26 +36,20 @@ int main(int argc, char *argv[]){
 		
 		//Parse String
 		argcount = stringParser(inputBuffer, &args, " ");
-		command = args[0];
+		command = args[0];	//First argument is the command
 
 		//Check for quit
 		if(strcmp(command,"quit") == 0){
 			break;
 		}
 
-		//printf("\nthe command is: %s", command);
-		//printf("\nThe arguments are: ");
-		//for(i=0;i<argcount;i++){
-		//	printf("\narg%d: %s", i, args[i]);
-		//}
-		
 		//Check for Internal command
 		isInternal = 0;
-		for(i=0;internalCommands[i]!=(char *)0;i++){
-			if(strcmp(command,internalCommands[i]) == 0){
-				isInternal = 1;
+		for(i=0;internalCommands[i]!=(char *)0;i++){	
+			if(strcmp(command,internalCommands[i]) == 0){	//compare to the list
+				isInternal = 1;	//is an internal command
 				commandCount++;
-				functions[i](curDir,args);
+				functions[i](curDir,args);	//Execute the internal function
 				break;
 			}
 		}
@@ -63,12 +58,12 @@ int main(int argc, char *argv[]){
 			//Execute the External command
 			if(args[argcount-1][strlen(args[argcount-1])-1] == '&'){//Execute Asynchronously
 				commandCount++;
-				args[argcount-1][strlen(args[argcount-1])-1] = '\0';
+				args[argcount-1][strlen(args[argcount-1])-1] = '\0';//Remove the &
 				executeExternalCommandAsync(args[0],args);
 			}else{	//Execute Synchronously
 				commandCount++;
 				executeExternalCommandSync(command,args);
-			}			
+			}
 		}
 		free(args);
 	}
@@ -120,14 +115,12 @@ int stringParser(char* line, char*** args,char *delimiter) {
 }
 
 void cd(char *curDir, char **args){
-	char ** fraggedDir;
-	char newCurDir[MAX_DIR_LEN];
-	char * parentCurDir;
-	int dirLen,i,status;
-	int myPipe[2];
+	char * parentCurDir;	//To receive the new string from the pipe
+	int status;
+	int myPipe[2];	//myPipe[0] is input; myPipe[1] is output
 	pid_t pid;
 
-	if(pipe(myPipe)){
+	if(pipe(myPipe)){	//Create the pipe
 		printf("\nError creating Pipe");
 		return;
 	}
@@ -135,32 +128,15 @@ void cd(char *curDir, char **args){
 	pid = fork();
 
 	if(pid == 0){ //Child Process
-		dirLen = stringParser(curDir, &fraggedDir, "/");
-		if(strcmp("..",args[1]) == 0){	//Going down one folder
-			curDir[0] = '\0';
-			for(i=0;i<dirLen-1;i++){
-				strcat(curDir,"/");
-				strcat(curDir,fraggedDir[i]);
-			}
-			strcat(newCurDir,curDir);
-		}
-		else if(args[1][0] == '/'){	//absolute path
-			strcat(newCurDir,args[1]);
-		}
-		else{	//relative path
-			strcat(newCurDir,curDir);
-			strcat(newCurDir,"/");
-			strcat(newCurDir,args[1]);
-		}
-		close(myPipe[0]);
-		writeToPipe(myPipe[1],newCurDir);
+		close(myPipe[0]);	//Close the input
+		writeToPipe(myPipe[1],args[1]);	//Write the command to the pipe
 		exit(0);
 	}
 	else if(pid > 0){ //Parent Process
-		waitpid(pid,&status,0);
-		close(myPipe[1]);
-		parentCurDir = readFromPipe(myPipe[0]);	
-		if(chdir(parentCurDir) != 0){
+		waitpid(pid,&status,0);	//Wait for the cd child to finish
+		close(myPipe[1]);	//Close the output
+		parentCurDir = readFromPipe(myPipe[0]);		//Get the command
+		if(chdir(parentCurDir) != 0){	//Change the current directory
 			printf("\ncd command failed");
 		}else{
 			printf("\ncd command complete");
@@ -202,6 +178,7 @@ void executeExternalCommandAsync(char * command, char ** args){
 		exit(0);
 	}
 	else if(pid > 0){ //Parent Process
+		//Dont wait for the child to finish
 	}
 	else{ //Error
 		printf("\nError creating the child process");
