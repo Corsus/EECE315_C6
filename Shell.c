@@ -11,7 +11,8 @@
 typedef void (*function)(char *curDir, char ** args);
 
 int stringParser(char* line, char*** args, char *delimiter);
-void executeExternalCommand(char * command, char ** args);
+void executeExternalCommandSync(char * command, char ** args);
+void executeExternalCommandAsync(char * command, char ** args);
 char* readFromPipe (int file);
 void writeToPipe (int file, char* input);
 void cd(char *curDir, char **args);
@@ -60,8 +61,14 @@ int main(int argc, char *argv[]){
 		
 		if(isInternal == 0){
 			//Execute the External command
-			commandCount++;
-			executeExternalCommand(command,args);
+			if(args[argcount-1][strlen(args[argcount-1])-1] == '&'){//Execute Asynchronously
+				commandCount++;
+				args[argcount-1][strlen(args[argcount-1])-1] = '\0';
+				executeExternalCommandAsync(args[0],args);
+			}else{	//Execute Synchronously
+				commandCount++;
+				executeExternalCommandSync(command,args);
+			}			
 		}
 		free(args);
 	}
@@ -116,7 +123,7 @@ void cd(char *curDir, char **args){
 	char ** fraggedDir;
 	char newCurDir[MAX_DIR_LEN];
 	char * parentCurDir;
-	int dirLen,i;
+	int dirLen,i,status;
 	int myPipe[2];
 	pid_t pid;
 
@@ -150,7 +157,7 @@ void cd(char *curDir, char **args){
 		exit(0);
 	}
 	else if(pid > 0){ //Parent Process
-		wait((int *)0);
+		waitpid(pid,&status,0);
 		close(myPipe[1]);
 		parentCurDir = readFromPipe(myPipe[0]);	
 		if(chdir(parentCurDir) != 0){
@@ -165,7 +172,8 @@ void cd(char *curDir, char **args){
 	return;	
 }
 
-void executeExternalCommand(char * command, char ** args){
+void executeExternalCommandSync(char * command, char ** args){
+	int status;
 	pid_t pid = fork();	//Create new process
 	//Execute the command in a child process
 
@@ -175,8 +183,25 @@ void executeExternalCommand(char * command, char ** args){
 		exit(0);
 	}
 	else if(pid > 0){ //Parent Process
-		wait((int *)0);
+		waitpid(pid,&status,0);
 		printf("\nCommand: %s complete", command);
+	}
+	else{ //Error
+		printf("\nError creating the child process");
+	}
+	return;
+}
+
+void executeExternalCommandAsync(char * command, char ** args){
+	pid_t pid = fork();	//Create new process
+	//Execute the command in a child process
+
+	if(pid == 0){ //Child Process
+		execvp(command,args);
+		perror("Failed to execute command");
+		exit(0);
+	}
+	else if(pid > 0){ //Parent Process
 	}
 	else{ //Error
 		printf("\nError creating the child process");
