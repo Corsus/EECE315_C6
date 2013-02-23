@@ -30,6 +30,7 @@ int main(int argc, char *argv[]){
 		//Get Current Working Directory (CWD)
 		curDir = getcwd(NULL, MAX_DIR_LEN);	
 
+		do{
 		//Read input
 		do{
 		printf("%s$%d: ", curDir, commandCount);
@@ -39,6 +40,7 @@ int main(int argc, char *argv[]){
 		//Parse String
 		argcount = stringParser(inputBuffer, &args, " ");
 		command = args[0];	//First argument is the command
+		}while(command == NULL);
 
 		//Check for quit
 		if(strcmp(command,"quit") == 0){
