@@ -13,6 +13,7 @@ typedef void (*function)(char *curDir, char ** args);	//For internal functions
 int stringParser(char* line, char*** args, char *delimiter);
 void executeExternalCommandSync(char * command, char ** args);
 void executeExternalCommandAsync(char * command, char ** args);
+void executeExternalCommandHelper(char * command, char ** args);
 char* readFromPipe (int file);
 void writeToPipe (int file, char* input);
 void cd(char *curDir, char **args);
@@ -158,7 +159,8 @@ void executeExternalCommandSync(char * command, char ** args){
 	//Execute the command in a child process
 
 	if(pid == 0){ //Child Process
-		execvp(command,args);
+		//execvp(command,args);
+		executeExternalCommandHelper(command,args);
 		perror("Failed to execute command");
 		exit(0);
 	}
@@ -177,7 +179,8 @@ void executeExternalCommandAsync(char * command, char ** args){
 	//Execute the command in a child process
 
 	if(pid == 0){ //Child Process
-		execvp(command,args);
+		//execvp(command,args);
+		executeExternalCommandHelper(command,args);
 		perror("Failed to execute command");
 		exit(0);
 	}
@@ -188,4 +191,33 @@ void executeExternalCommandAsync(char * command, char ** args){
 		printf("Error creating the child process\n");
 	}
 	return;
+}
+
+void executeExternalCommandHelper(char * command, char ** args){
+	
+	char* pPath;
+	char** pathArray;
+	int pathCount;
+	char* singlePath;
+	
+	//obtain PATH information from the environment variables, parse the paths into array of strings
+	pPath = getenv ("PATH");
+	pathCount = stringParser(pPath, &pathArray, ":");
+	
+	//go through each path
+	while (*pathArray){
+		//copy the path to singlePath, add "/" and the command name to the end
+		singlePath = (char *) malloc((strlen(*pathArray)+2+strlen(command))*sizeof(char*));
+		strcpy(singlePath,*pathArray);
+		strcat(singlePath, "/");
+		strcat(singlePath, command);
+		
+		//try execv, if the process did not get overwrited, the while loop continues to try with other paths
+		execv(singlePath,args);
+		*pathArray++;
+	}
+	
+	free(pathArray);
+	return;
+	
 }
