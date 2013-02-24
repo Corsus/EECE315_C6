@@ -34,7 +34,7 @@ int main(int argc, char *argv[]){
 		do{
 		//Read input
 		do{
-		printf("%s$%d: ", curDir, commandCount);
+		printf("\n%s$%d: ", curDir, commandCount);
 		gets(inputBuffer);
 		}while(strlen(inputBuffer)==0);
 		
@@ -120,35 +120,10 @@ int stringParser(char* line, char*** args,char *delimiter) {
 }
 
 void cd(char *curDir, char **args){
-	char * parentCurDir;	//To receive the new string from the pipe
-	int status;
-	int myPipe[2];	//myPipe[0] is input; myPipe[1] is output
-	pid_t pid;
-
-	if(pipe(myPipe)){	//Create the pipe
-		printf("Error creating Pipe\n");
-		return;
-	}
-
-	pid = fork();
-
-	if(pid == 0){ //Child Process
-		close(myPipe[0]);	//Close the input
-		writeToPipe(myPipe[1],args[1]);	//Write the command to the pipe
-		exit(0);
-	}
-	else if(pid > 0){ //Parent Process
-		waitpid(pid,&status,0);	//Wait for the cd child to finish
-		close(myPipe[1]);	//Close the output
-		parentCurDir = readFromPipe(myPipe[0]);		//Get the command
-		if(chdir(parentCurDir) != 0){	//Change the current directory
-			printf("cd command failed\n");
-		}else{
-			printf("cd command complete\n");
-		}
-	}
-	else{ //Error
-		printf("Error creating the child process\n");
+	if(chdir(args[1]) != 0){	//Change the current directory
+		printf("\ncd command failed");
+	}else{
+		printf("\ncd command complete");
 	}
 	return;	
 }
