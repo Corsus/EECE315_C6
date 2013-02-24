@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<unistd.h>
+#include<sys/stat.h>
 #include<sys/wait.h>
 
 #define MAX_INPUT_LEN 100
@@ -13,7 +14,7 @@ typedef void (*function)(char *curDir, char ** args);	//For internal functions
 int stringParser(char* line, char*** args, char *delimiter);
 void executeExternalCommandSync(char * command, char ** args);
 void executeExternalCommandAsync(char * command, char ** args);
-void executeExternalCommandHelper(char * command, char ** args);
+int findFile(char *filename, char **pathName);
 char* readFromPipe (int file);
 void writeToPipe (int file, char* input);
 void cd(char *curDir, char **args);
@@ -31,17 +32,13 @@ int main(int argc, char *argv[]){
 		//Get Current Working Directory (CWD)
 		curDir = getcwd(NULL, MAX_DIR_LEN);	
 
-		do{
 		//Read input
-		do{
 		printf("\n%s$%d: ", curDir, commandCount);
 		gets(inputBuffer);
-		}while(strlen(inputBuffer)==0);
 		
 		//Parse String
 		argcount = stringParser(inputBuffer, &args, " ");
 		command = args[0];	//First argument is the command
-		}while(command == NULL);
 
 		//Check for quit
 		if(strcmp(command,"quit") == 0){
@@ -94,7 +91,7 @@ void writeToPipe (int file, char* input){
 	stream = fdopen (file, "w");
 	for(i=0;i<strlen(input);i++){
 		if(fputc(input[i],stream) == EOF)
-			printf("Printing to pipe fail\n");
+			printf("\nPrinting to pipe fail");
 	}
 	fclose (stream);
 }
@@ -119,6 +116,37 @@ int stringParser(char* line, char*** args,char *delimiter) {
 	return argc;
 }
 
+int findFile(char *fileName, char **pathName){
+	char **fraggedPath;
+	char *PATH, *dirBuffer;
+	struct stat fileStat;
+	int pathNum, i;
+	
+	//Get PATH environmental variable
+	PATH = getenv("PATH");
+
+	//Parse the PATH string
+	pathNum = stringParser(PATH, &fraggedPath, ":");
+
+	for(i=0;i<pathNum;i++){
+		dirBuffer = (char *) calloc(MAX_DIR_LEN,sizeof(char*));//Allocate memory for buffer
+		
+		//Create the potential directory
+		strcat(dirBuffer, fraggedPath[i]);
+		strcat(dirBuffer,"/");
+		strcat(dirBuffer,fileName);
+
+		//Check if the directory exists
+		if(stat(dirBuffer, &fileStat) >= 0){
+			(*pathName) = dirBuffer;
+			free(fraggedPath);
+			return 1;
+		}
+		free(dirBuffer);
+	}
+	return 0;
+}
+
 void cd(char *curDir, char **args){
 	if(chdir(args[1]) != 0){	//Change the current directory
 		printf("\ncd command failed");
@@ -130,32 +158,40 @@ void cd(char *curDir, char **args){
 
 void executeExternalCommandSync(char * command, char ** args){
 	int status;
+	char *pathName;
 	pid_t pid = fork();	//Create new process
+	
 	//Execute the command in a child process
-
 	if(pid == 0){ //Child Process
-		//execvp(command,args);
-		executeExternalCommandHelper(command,args);
+		if(findFile(command,&pathName) == 0){	//Convert filename to pathname
+			printf("\nCould not find file");
+			exit(0);
+		}
+		execv(pathName,args);
 		perror("Failed to execute command");
 		exit(0);
 	}
 	else if(pid > 0){ //Parent Process
 		waitpid(pid,&status,0);
-		printf("Command: %s complete\n", command);
+		//printf("\nCommand: %s complete", command);
 	}
 	else{ //Error
-		printf("Error creating the child process\n");
+		printf("\nError creating the child process");
 	}
 	return;
 }
 
 void executeExternalCommandAsync(char * command, char ** args){
+	char *pathName;	
 	pid_t pid = fork();	//Create new process
 	//Execute the command in a child process
 
 	if(pid == 0){ //Child Process
-		//execvp(command,args);
-		executeExternalCommandHelper(command,args);
+		if(findFile(command,&pathName) == 0){	//Convert filename to pathname
+			printf("\nCould not find file");
+			return;
+		}
+		execv(pathName,args);
 		perror("Failed to execute command");
 		exit(0);
 	}
@@ -163,36 +199,7 @@ void executeExternalCommandAsync(char * command, char ** args){
 		//Dont wait for the child to finish
 	}
 	else{ //Error
-		printf("Error creating the child process\n");
+		printf("\nError creating the child process");
 	}
 	return;
-}
-
-void executeExternalCommandHelper(char * command, char ** args){
-	
-	char* pPath;
-	char** pathArray;
-	int pathCount;
-	char* singlePath;
-	
-	//obtain PATH information from the environment variables, parse the paths into array of strings
-	pPath = getenv ("PATH");
-	pathCount = stringParser(pPath, &pathArray, ":");
-	
-	//go through each path
-	while (*pathArray){
-		//copy the path to singlePath, add "/" and the command name to the end
-		singlePath = (char *) malloc((strlen(*pathArray)+2+strlen(command))*sizeof(char*));
-		strcpy(singlePath,*pathArray);
-		strcat(singlePath, "/");
-		strcat(singlePath, command);
-		
-		//try execv, if the process did not get overwrited, the while loop continues to try with other paths
-		execv(singlePath,args);
-		*pathArray++;
-	}
-	
-	free(pathArray);
-	return;
-	
 }
