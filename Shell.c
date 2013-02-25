@@ -32,13 +32,17 @@ int main(int argc, char *argv[]){
 		//Get Current Working Directory (CWD)
 		curDir = getcwd(NULL, MAX_DIR_LEN);	
 
+		do{
 		//Read input
+		do{
 		printf("\n%s$%d: ", curDir, commandCount);
 		gets(inputBuffer);
+		}while(strlen(inputBuffer) == 0);
 		
 		//Parse String
 		argcount = stringParser(inputBuffer, &args, " ");
 		command = args[0];	//First argument is the command
+		}while(command == NULL);
 
 		//Check for quit
 		if(strcmp(command,"quit") == 0){
