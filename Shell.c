@@ -33,15 +33,15 @@ int main(int argc, char *argv[]){
 		curDir = getcwd(NULL, MAX_DIR_LEN);	
 
 		do{
-		//Read input
-		do{
-		printf("\n%s$%d: ", curDir, commandCount);
-		gets(inputBuffer);
-		}while(strlen(inputBuffer) == 0);
+			//Read input
+			do{
+				printf("\n%s$%d: ", curDir, commandCount);
+				gets(inputBuffer);
+			}while(strlen(inputBuffer) == strspn(inputBuffer, " \t\n"));
 		
-		//Parse String
-		argcount = stringParser(inputBuffer, &args, " ");
-		command = args[0];	//First argument is the command
+			//Parse String
+			argcount = stringParser(inputBuffer, &args, " \n\t");
+			command = args[0];	//First argument is the command
 		}while(command == NULL);
 
 		//Check for quit
@@ -103,6 +103,7 @@ void writeToPipe (int file, char* input){
 int stringParser(char* line, char*** args,char *delimiter) {
 
 	int argc = 0;
+	int i;
 	char *buffer;
 
 	//Use buffer so line is not ruined
@@ -116,6 +117,19 @@ int stringParser(char* line, char*** args,char *delimiter) {
 	(*args)[argc++] = strtok(buffer, delimiter);
 	while ((((*args)[argc] = strtok(NULL, delimiter)) != NULL) && (argc < MAX_ARGS))
 		++argc;
+
+	//Check for variable dereference ($)
+	for(i=0;i<argc;i++){
+		if((*args)[i][0] == '$'){
+			if(getenv((*args)[i]+1) == NULL){
+				printf("\n%s is Not a valid Variable", (*args)[i]+1);
+				(*args)[0] = NULL;
+			}
+			else{
+				(*args)[i] = getenv((*args)[i]+1);
+			}
+		}
+	}
 
 	return argc;
 }
@@ -193,7 +207,7 @@ void executeExternalCommandAsync(char * command, char ** args){
 	if(pid == 0){ //Child Process
 		if(findFile(command,&pathName) == 0){	//Convert filename to pathname
 			printf("\nCould not find file");
-			return;
+			exit(0);
 		}
 		execv(pathName,args);
 		perror("Failed to execute command");
