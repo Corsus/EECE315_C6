@@ -150,7 +150,7 @@ int findFile(char *fileName, char **pathName){
 	pathNum = stringParser(PATH, &fraggedPath, ":");
 
 	for(i=0;i<pathNum;i++){
-		dirBuffer = (char *) calloc(MAX_DIR_LEN,sizeof(char*));//Allocate memory for buffer
+		dirBuffer = (char *) calloc(strlen(fraggedPath[i])+sizeof(char)+strlen(fileName),sizeof(char*));//Allocate memory for buffer
 
 		if(strcmp(fraggedPath[i],".") == 0){		
 			//Search current Directory
@@ -175,21 +175,17 @@ int findFile(char *fileName, char **pathName){
 }
 
 void cd(char *curDir, int argc, char **args){
-	if(argc < 2){
-		printf("\ncommand failed not enough arguments");
-	}else{
-		if(strcmp(args[1],"~") == 0){
-			if(chdir(getenv("HOME")) != 0){	//Change the current directory
-				printf("\ncd command failed");
-			}else{
-				printf("\ncd command complete");
-			}	
+	if(argc < 2 || strcmp(args[1],"~") == 0){
+		if(chdir(getenv("HOME")) != 0){	//Change the current directory
+			printf("\ncd command failed");
 		}else{
-			if(chdir(args[1]) != 0){	//Change the current directory
-				printf("\ncd command failed");
-			}else{
-				printf("\ncd command complete");
-			}
+			printf("\ncd command complete");
+		}	
+	}else{
+		if(chdir(args[1]) != 0){	//Change the current directory
+			printf("\ncd command failed");
+		}else{
+			printf("\ncd command complete");
 		}
 	}
 	return;
