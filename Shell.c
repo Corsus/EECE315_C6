@@ -6,24 +6,27 @@
 #include<sys/wait.h>
 
 #define MAX_INPUT_LEN 100
+#define MAX_ENV_VAR_LEN 1024
 #define MAX_DIR_LEN 200
 #define MAX_ARGS 20
 
-typedef void (*function)(char *curDir, char ** args);	//For internal functions
+typedef void (*function)(char *curDir, int argc, char ** args);	//For internal functions
 
 int stringParser(char* line, char*** args, char *delimiter);
 void executeExternalCommandSync(char * command, char ** args);
 void executeExternalCommandAsync(char * command, char ** args);
 int findFile(char *filename, char **pathName);
-char* readFromPipe (int file);
-void writeToPipe (int file, char* input);
-void cd(char *curDir, char **args);
+//char* readFromPipe (int file);
+//void writeToPipe (int file, char* input);
+void cd(char *curDir, int argc, char **args);
+void export(char *curDir, int argc, char **args);
+void unset(char *curDir, int argc, char **args);
 
 int main(int argc, char *argv[]){
 	char ** args;	//args list
 	char *command, *curDir;
-	char *internalCommands[] = {"cd",(char *)0};	//List of internal commands
-	function functions[] = {cd};	//The list of functions (internal)
+	char *internalCommands[] = {"cd","export","unset",(char *)0};	//List of internal commands
+	function functions[] = {cd,export,unset};	//The list of functions (internal)
 	char inputBuffer[MAX_INPUT_LEN];
 	int i, argcount, isInternal;
 	int commandCount = 0;
@@ -55,7 +58,7 @@ int main(int argc, char *argv[]){
 			if(strcmp(command,internalCommands[i]) == 0){	//compare to the list
 				isInternal = 1;	//is an internal command
 				commandCount++;
-				functions[i](curDir,args);	//Execute the internal function
+				functions[i](curDir,argcount,args);//Execute the internal function
 				break;
 			}
 		}
@@ -77,7 +80,7 @@ int main(int argc, char *argv[]){
 	return;
 }
 
-char* readFromPipe (int file){
+/*char* readFromPipe (int file){
 	FILE *stream;
 	char *buffer;
 	int c,i;
@@ -98,7 +101,7 @@ void writeToPipe (int file, char* input){
 			printf("\nPrinting to pipe fail");
 	}
 	fclose (stream);
-}
+}*/
 
 int stringParser(char* line, char*** args,char *delimiter) {
 
@@ -148,12 +151,18 @@ int findFile(char *fileName, char **pathName){
 
 	for(i=0;i<pathNum;i++){
 		dirBuffer = (char *) calloc(MAX_DIR_LEN,sizeof(char*));//Allocate memory for buffer
-		
-		//Create the potential directory
-		strcat(dirBuffer, fraggedPath[i]);
-		strcat(dirBuffer,"/");
-		strcat(dirBuffer,fileName);
 
+		if(strcmp(fraggedPath[i],".") == 0){		
+			//Search current Directory
+			strcat(dirBuffer, getcwd(NULL, MAX_DIR_LEN));
+			strcat(dirBuffer, "/");
+			strcat(dirBuffer, fileName);
+		}else{
+			//Create the potential directory
+			strcat(dirBuffer, fraggedPath[i]);
+			strcat(dirBuffer,"/");
+			strcat(dirBuffer,fileName);
+		}
 		//Check if the directory exists
 		if(stat(dirBuffer, &fileStat) >= 0){
 			(*pathName) = dirBuffer;
@@ -165,13 +174,51 @@ int findFile(char *fileName, char **pathName){
 	return 0;
 }
 
-void cd(char *curDir, char **args){
-	if(chdir(args[1]) != 0){	//Change the current directory
-		printf("\ncd command failed");
+void cd(char *curDir, int argc, char **args){
+	if(argc < 2){
+		printf("\ncommand failed not enough arguments");
 	}else{
-		printf("\ncd command complete");
+		if(strcmp(args[1],"~") == 0){
+			if(chdir(getenv("HOME")) != 0){	//Change the current directory
+				printf("\ncd command failed");
+			}else{
+				printf("\ncd command complete");
+			}	
+		}else{
+			if(chdir(args[1]) != 0){	//Change the current directory
+				printf("\ncd command failed");
+			}else{
+				printf("\ncd command complete");
+			}
+		}
 	}
-	return;	
+	return;
+}
+
+void export(char *curDir, int argc, char **args){
+	int i;
+	char *buffer;
+	buffer = (char *) calloc(MAX_ENV_VAR_LEN,sizeof(char *));
+	if(argc < 2){
+		printf("\ncommand failed not enough arguments");
+	}else{
+		for(i=1;i<argc;i++){
+			strcat(buffer,args[i]);
+		}
+		putenv(buffer);
+	}
+}
+
+void unset(char *curDir, int argc, char **args){
+	if(argc < 2){
+		printf("\ncommand failed not enough arguments");
+	}else{
+		if(getenv(args[1]) == NULL){
+			printf("\n%s is not a variable ", args[1]);
+		}else{
+			unsetenv(args[1]);
+		}
+	}
 }
 
 void executeExternalCommandSync(char * command, char ** args){
@@ -182,7 +229,7 @@ void executeExternalCommandSync(char * command, char ** args){
 	//Execute the command in a child process
 	if(pid == 0){ //Child Process
 		if(findFile(command,&pathName) == 0){	//Convert filename to pathname
-			printf("\nCould not find file");
+			printf("\nCould not find file %s", command);
 			exit(0);
 		}
 		execv(pathName,args);
@@ -206,7 +253,7 @@ void executeExternalCommandAsync(char * command, char ** args){
 
 	if(pid == 0){ //Child Process
 		if(findFile(command,&pathName) == 0){	//Convert filename to pathname
-			printf("\nCould not find file");
+			printf("\nCould not find file %s", command);
 			exit(0);
 		}
 		execv(pathName,args);
