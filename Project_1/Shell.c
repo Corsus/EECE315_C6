@@ -41,7 +41,7 @@ int main(int argc, char *argv[]){
 		do{
 			//Read input
 			do{
-				printf("\n%s$%d: ", curDir, commandCount);
+				printf("%s$%d: ", curDir, commandCount);
 				gets(inputBuffer);
 			}while(strlen(inputBuffer) == strspn(inputBuffer, " \t\n"));
 		
@@ -150,7 +150,7 @@ int stringParser(char* line, char*** args,char *delimiter) {
 	for(i=0;i<argc;i++){
 		if((*args)[i][0] == '$'){
 			if(getenv((*args)[i]+1) == NULL){
-				printf("\n%s is Not a valid Variable", (*args)[i]+1);
+				printf("%s is Not a valid Variable\n", (*args)[i]+1);
 				(*args)[0] = NULL;
 			}
 			else{
@@ -213,15 +213,15 @@ int findFile(char *fileName, char **pathName){
 void cd(char *curDir, int argc, char **args){
 	if(argc < 2 || strcmp(args[1],"~") == 0){
 		if(chdir(getenv("HOME")) != 0){	//Change the current directory
-			printf("\ncd command failed");
+			printf("cd command failed\n");
 		}else{
-			printf("\ncd command complete");
+			//printf("cd command complete\n");
 		}	
 	}else{
 		if(chdir(args[1]) != 0){	//Change the current directory
-			printf("\ncd command failed");
+			printf("cd command failed\n");
 		}else{
-			printf("\ncd command complete");
+			//printf("cd command complete\n");
 		}
 	}
 	return;
@@ -232,7 +232,7 @@ void export(char *curDir, int argc, char **args){
 	char *buffer;
 	buffer = (char *) calloc(MAX_ENV_VAR_LEN,sizeof(char *));
 	if(argc < 2){
-		printf("\ncommand failed not enough arguments");
+		printf("command failed not enough arguments\n");
 	}else{
 		for(i=1;i<argc;i++){
 			strcat(buffer,args[i]);
@@ -243,10 +243,10 @@ void export(char *curDir, int argc, char **args){
 
 void unset(char *curDir, int argc, char **args){
 	if(argc < 2){
-		printf("\ncommand failed not enough arguments");
+		printf("command failed not enough arguments\n");
 	}else{
 		if(getenv(args[1]) == NULL){
-			printf("\n%s is not a variable ", args[1]);
+			printf("%s is not a variable \n", args[1]);
 		}else{
 			unsetenv(args[1]);
 		}
@@ -261,7 +261,7 @@ void executeExternalCommandSync(char * command, char ** args){
 	//Execute the command in a child process
 	if(pid == 0){ //Child Process
 		if(findFile(command,&pathName) == 0){	//Convert filename to pathname
-			printf("\nCould not find file %s", command);
+			printf("Could not find file %s\n", command);
 			exit(0);
 		}
 		execv(pathName,args);
@@ -273,7 +273,7 @@ void executeExternalCommandSync(char * command, char ** args){
 		//printf("\nCommand: %s complete", command);
 	}
 	else{ //Error
-		printf("\nError creating the child process");
+		printf("Error creating the child process\n");
 	}
 	return;
 }
@@ -285,7 +285,7 @@ void executeExternalCommandAsync(char * command, char ** args){
 
 	if(pid == 0){ //Child Process
 		if(findFile(command,&pathName) == 0){	//Convert filename to pathname
-			printf("\nCould not find file %s", command);
+			printf("Could not find file %s\n", command);
 			exit(0);
 		}
 		execv(pathName,args);
@@ -296,7 +296,7 @@ void executeExternalCommandAsync(char * command, char ** args){
 		//Dont wait for the child to finish
 	}
 	else{ //Error
-		printf("\nError creating the child process");
+		printf("Error creating the child process\n");
 	}
 	return;
 }
