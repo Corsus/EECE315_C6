@@ -111,18 +111,40 @@ int stringParser(char* line, char*** args,char *delimiter) {
 	int argc = 0;
 	int i;
 	char *buffer;
-
+	char *temp;
+	
 	//Use buffer so line is not ruined
 	buffer = (char *) malloc(strlen(line)*sizeof(char*));
 	strcpy(buffer,line);
+	
+	temp = (char *) malloc(strlen(line)*sizeof(char*));
 	
 	//Allocate space for arguments
 	(*args) = (char**) malloc(MAX_ARGS * sizeof(char**));
  
 	//Sort strings between delimiters into the args array
-	(*args)[argc++] = strtok(buffer, delimiter);
-	while ((((*args)[argc] = strtok(NULL, delimiter)) != NULL) && (argc < MAX_ARGS))
-		++argc;
+	(*args)[argc] = strtok(buffer, delimiter);
+	while (((*args)[argc] != NULL) && (argc < MAX_ARGS)){
+		//if the end of the term contains the character '\' (ASCII value 92)
+		if ((*args)[argc][strlen((*args)[argc])-1] == 92){
+			//the next term is assigned to temp
+			temp = strtok(NULL, delimiter);
+			//if temp is not NULL, change '\' to space, add the content of temp of the end of (*args)[argc]
+			if (temp != NULL){
+				(*args)[argc][strlen((*args)[argc])-1] = ' ';
+				strcat((*args)[argc], temp);
+				//printf("\n%s check point 4", (*args)[argc]);
+			}
+			else {
+				++argc;
+				(*args)[argc] = temp;
+				}
+		}
+		else {
+			++argc;
+			(*args)[argc] = strtok(NULL, delimiter);
+		}
+	}
 
 	//Check for variable dereference ($)
 	for(i=0;i<argc;i++){
