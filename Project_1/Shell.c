@@ -31,6 +31,9 @@ int main(int argc, char *argv[]){
 	int i, argcount, isInternal;
 	int commandCount = 0;
 
+	//Make current working directory HOME
+	chdir(getenv("HOME"));
+
 	while(1){
 		//Get Current Working Directory (CWD)
 		curDir = getcwd(NULL, MAX_DIR_LEN);	
