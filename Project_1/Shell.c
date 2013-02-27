@@ -143,12 +143,23 @@ int findFile(char *fileName, char **pathName){
 	struct stat fileStat;
 	int pathNum, i;
 	
+	if(fileName[0] == '.' && fileName[1] == '/'){	//Search current directory
+		dirBuffer = getcwd(NULL, MAX_DIR_LEN);
+		(*pathName) = dirBuffer;
+		strcat((*pathName), &fileName[1]);
+		return 1;
+	}
+	if(fileName[0] == '/'){	//Absolute directory
+		(*pathName) = fileName;
+		return 1;
+	}
+
 	//Get PATH environmental variable
 	PATH = getenv("PATH");
 
 	//Parse the PATH string
 	pathNum = stringParser(PATH, &fraggedPath, ":");
-
+	
 	for(i=0;i<pathNum;i++){
 		dirBuffer = (char *) calloc(strlen(fraggedPath[i])+sizeof(char)+strlen(fileName),sizeof(char*));//Allocate memory for buffer
 
