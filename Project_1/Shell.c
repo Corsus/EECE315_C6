@@ -13,11 +13,11 @@
 typedef void (*function)(char *curDir, int argc, char ** args);	//For internal functions
 
 int stringParser(char* line, char*** args, char *delimiter);
+int findFile(char *filename, char **pathName);
+//External functions
 void executeExternalCommandSync(char * command, char ** args);
 void executeExternalCommandAsync(char * command, char ** args);
-int findFile(char *filename, char **pathName);
-//char* readFromPipe (int file);
-//void writeToPipe (int file, char* input);
+//Internal functions
 void cd(char *curDir, int argc, char **args);
 void export(char *curDir, int argc, char **args);
 void unset(char *curDir, int argc, char **args);
@@ -83,29 +83,6 @@ int main(int argc, char *argv[]){
 	return;
 }
 
-/*char* readFromPipe (int file){
-	FILE *stream;
-	char *buffer;
-	int c,i;
-	buffer = (char*) malloc(MAX_DIR_LEN * sizeof(char*));
-	stream = fdopen (file, "r");
-	for(i=0; ((c = fgetc (stream)) != EOF); i++)
-		buffer[i] = c;
-	fclose (stream);
-	return buffer;
-}
-
-void writeToPipe (int file, char* input){
-	int i;
-	FILE *stream;
-	stream = fdopen (file, "w");
-	for(i=0;i<strlen(input);i++){
-		if(fputc(input[i],stream) == EOF)
-			printf("\nPrinting to pipe fail");
-	}
-	fclose (stream);
-}*/
-
 int stringParser(char* line, char*** args,char *delimiter) {
 
 	int argc = 0;
@@ -133,7 +110,6 @@ int stringParser(char* line, char*** args,char *delimiter) {
 			if (temp != NULL){
 				(*args)[argc][strlen((*args)[argc])-1] = ' ';
 				strcat((*args)[argc], temp);
-				//printf("\n%s check point 4", (*args)[argc]);
 			}
 			else {
 				++argc;
@@ -214,14 +190,10 @@ void cd(char *curDir, int argc, char **args){
 	if(argc < 2 || strcmp(args[1],"~") == 0){
 		if(chdir(getenv("HOME")) != 0){	//Change the current directory
 			printf("cd command failed\n");
-		}else{
-			//printf("cd command complete\n");
-		}	
+		}
 	}else{
 		if(chdir(args[1]) != 0){	//Change the current directory
 			printf("cd command failed\n");
-		}else{
-			//printf("cd command complete\n");
 		}
 	}
 	return;
@@ -270,7 +242,6 @@ void executeExternalCommandSync(char * command, char ** args){
 	}
 	else if(pid > 0){ //Parent Process
 		waitpid(pid,&status,0);
-		//printf("\nCommand: %s complete", command);
 	}
 	else{ //Error
 		printf("Error creating the child process\n");
