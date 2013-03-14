@@ -7,15 +7,34 @@ using namespace std;
 //#define MAX_IO_BURST 100
 #define MAX_PROCESS 100
 
-struct process {
+struct process_t {
 	int PID;
 	int TARQ;
 	int PRIO;
 	int TNCPU;
-	//int TNIO;
 	int CPU[MAX_CPU_BURST];
 	int IO[MAX_CPU_BURST-1];
 } all_process[MAX_PROCESS];
+
+typedef bool (*schedule_t) (process_t *process_list, int process_c);
+
+bool schedule1 (process_t *process_list, int process_c){
+	process_t process_local[MAX_PROCESS];
+	memcpy (process_local, process_list, MAX_PROCESS);
+	cout <<"test3"<<process_list[0].PID<<endl;
+	cout <<"test4"<<process_local[0].PID<<endl;
+	return true;
+}
+
+bool schedule2 (process_t *process_list, int process_c){
+	process_t process_local[MAX_PROCESS];
+	memcpy (process_local, process_list, MAX_PROCESS);
+	process_local[0].PID = 999;
+	cout <<"test2"<<process_list[0].PID<<endl;
+	cout <<"test1"<<process_local[0].PID<<endl;
+	
+	return true;
+}
 
 int string_spliter(string line, int *p_attributes, string delimiter){
 	size_t prev = 0, pos;
@@ -31,26 +50,28 @@ int string_spliter(string line, int *p_attributes, string delimiter){
 	return att_count;
 }
 
-void string_parser(string line, process *out_process, int p_index){
+process_t string_parser(string line){//, process_t *out_process, int p_index){
 	int total_att;
 	int att[MAX_CPU_BURST*2+3];
 	int cpu_c = 0;
 	int io_c = 0;
+	process_t out_process;
 	total_att = string_spliter(line, att, " ");
-	out_process[p_index].PID = att[0];
-	out_process[p_index].TARQ = att[1];
-	out_process[p_index].PRIO = att[2];
-	out_process[p_index].TNCPU = att[3];
+	out_process.PID = att[0];
+	out_process.TARQ = att[1];
+	out_process.PRIO = att[2];
+	out_process.TNCPU = att[3];
 	for (int i = 4; i < total_att; i++){
 		if ((i%2) == 0){ 
-			out_process[p_index].CPU[cpu_c] = att[i];
+			out_process.CPU[cpu_c] = att[i];
 			cpu_c++;
 		}
 		else { 
-			out_process[p_index].IO[io_c] = att[i];
+			out_process.IO[io_c] = att[i];
 			io_c++;
 		}
 	}
+	return out_process;
 	//out_process[p_index].TNCPU = att[3];
 }
 
@@ -62,15 +83,24 @@ int main(){
 	myfile.open("E:/example.txt");
 	//myfile<<"Writing this to a file..... \n";
 	int line_counter = 0;
+
+	schedule_t schedule_functinos[] =
+	{
+		schedule1,
+		schedule2
+	};
+
 	if (myfile.is_open()){
 		while (myfile.good()){
 			getline (myfile,line);
-			string_parser (line, all_process, line_counter);
+			all_process[line_counter] = string_parser (line);
 			line_counter ++;
 		}
 	}
-	//myfunc();
 	myfile.close();
+
+	schedule_functinos[1] (all_process, line_counter);
+	schedule_functinos[0] (all_process, line_counter);
 	for (int i = 0; i< line_counter; i++){
 		cout <<"Process: "<<all_process[i].PID<<" ";
 		cout <<all_process[i].TARQ<<" ";
