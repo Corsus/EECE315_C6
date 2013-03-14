@@ -17,12 +17,6 @@ struct process {
 	int IO[MAX_CPU_BURST-1];
 } all_process[MAX_PROCESS];
 
-void myfunc() {
-  cout<<"This func takes no parameters and returns nothing";
-  return /*nothing*/;
-}
-
-
 int string_spliter(string line, int *p_attributes, string delimiter){
 	size_t prev = 0, pos;
 	int att_count = 0;
