@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <stdio.h>
+#include <stdlib.h>
 using namespace std;
 
 #define MAX_CPU_BURST 100
@@ -49,7 +51,7 @@ int main(){
 	string path;
 	cout << "Please enter the absolute path of the file: ";
 	cin >> path;
-	myfile.open(path);
+	myfile.open(path.c_str());
 	//myfile<<"Writing this to a file..... \n";
 	int line_counter = 0;
 	/*
@@ -129,4 +131,3 @@ process_t string_parser(string line){//, process_t *out_process, int p_index){
 	return out_process;
 	//out_process[p_index].TNCPU = att[3];
 }
-
