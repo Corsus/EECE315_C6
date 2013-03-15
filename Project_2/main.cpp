@@ -3,24 +3,20 @@
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
+#include "processt.hpp"
+#include "Node.hpp"
+
 using namespace std;
 
 #define MAX_CPU_BURST 100
 //#define MAX_IO_BURST 100
 #define MAX_PROCESS 100
 
-struct process_t {
-	int PID;
-	int TARQ;
-	int PRIO;
-	int TNCPU;
-	int CPU[MAX_CPU_BURST];
-	int IO[MAX_CPU_BURST-1];
-} all_process[MAX_PROCESS];
+processt all_process[MAX_PROCESS];
 
-typedef bool (*schedule_t) (process_t *process_list, int process_c);
+typedef bool (*schedule_t) (processt *process_list, int process_c);
 int string_spliter(string, int*, string);
-process_t string_parser(string);
+processt string_parser(string);
 
 /*
 //Algorithm Template
@@ -86,6 +82,7 @@ int main(){
 		}
 		cout <<endl;
 	}
+	
 	cout <<"Press enter to exit"<<endl;
 	cin.ignore(); 
     cin.get();
@@ -107,12 +104,12 @@ int string_spliter(string line, int *p_attributes, string delimiter){
 	return att_count;
 }
 
-process_t string_parser(string line){//, process_t *out_process, int p_index){
+processt string_parser(string line){//, process_t *out_process, int p_index){
 	int total_att;
 	int att[MAX_CPU_BURST*2+3];
 	int cpu_c = 0;
 	int io_c = 0;
-	process_t out_process;
+	processt out_process;
 	total_att = string_spliter(line, att, " ");
 	out_process.PID = att[0];
 	out_process.TARQ = att[1];
