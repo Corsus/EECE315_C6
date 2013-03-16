@@ -14,10 +14,10 @@ using namespace std;
 
 processt all_process[MAX_PROCESS];
 
-typedef bool (*schedule_t) (processt *process_list, int process_c);
+typedef void (*schedule_t) (vector<processt> *process_list, processt new_process);
 int string_spliter(string, int*, string);
 processt string_parser(string);
-void similator (vector<processt> process_list);
+void similator (vector<processt> process_list, schedule_t schedule_function);
 
 /*
 void test_function (vector<processt> *ready_list){
@@ -25,17 +25,13 @@ void test_function (vector<processt> *ready_list){
 	cout<<"test1 "<<(*ready_list).front().PID<<endl;
 }*/
 
-/*
+
 //Algorithm Template
 //=============================================================
-bool schedule1 (process_t *process_list, int process_c){
-	process_t process_local[MAX_PROCESS];
-	memcpy (process_local, process_list, MAX_PROCESS);
-	cout <<"test3"<<process_list[0].PID<<endl;
-	cout <<"test4"<<process_local[0].PID<<endl;
-	return true;
-}
 
+void FCFS (vector<processt> *process_list, processt new_process);
+
+/*
 bool schedule2 (process_t *process_list, int process_c){
 	process_t process_local[MAX_PROCESS];
 	memcpy (process_local, process_list, MAX_PROCESS);
@@ -44,9 +40,9 @@ bool schedule2 (process_t *process_list, int process_c){
 	cout <<"test1"<<process_local[0].PID<<endl;
 	
 	return true;
-}
+}*/
 //=============================================================
-*/
+
 
 int main(){ 
 	ifstream myfile;
@@ -58,13 +54,12 @@ int main(){
 	myfile.open(path.c_str());
 	int line_counter = 0;
 	vector<processt> all_process;
-	/*
+	
 	schedule_t schedule_functinos[] =
 	{
-		schedule1,
-		schedule2
+		FCFS
 	};
-	*/
+	
 	if (myfile.is_open()){
 		while (myfile.good()){
 			getline (myfile,line);
@@ -76,7 +71,7 @@ int main(){
 	schedule_functinos[1] (all_process, line_counter);
 	schedule_functinos[0] (all_process, line_counter);
 	*/
-	similator(all_process);
+	similator(all_process, schedule_functinos[0]);
 	//test_function(&all_process);
 	for(int i=0; i != all_process.size(); i++){
 		cout <<"Process: "<<all_process[i].PID<<" ";
@@ -137,7 +132,7 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	//out_process[p_index].TNCPU = att[3];
 }
 
-void similator (vector<processt> wait_list){
+void similator (vector<processt> wait_list, schedule_t schedule_function){
 	vector<processt> cpu;
 	vector<processt> io_list;
 	vector<processt> finish_list;
@@ -162,7 +157,8 @@ void similator (vector<processt> wait_list){
 					}
 					if (io_list[i].IO[io_list[i].current_burst] == 0){
 						io_list[i].current_burst++;
-						ready_list.push_back(io_list[i]);//this is where the algorithm should go
+						schedule_function(&ready_list, io_list[i]);
+						//ready_list.push_back(io_list[i]);//this is where the algorithm should go
 						io_list.erase(io_list.begin()+i);
 					}
 				}
@@ -190,7 +186,8 @@ void similator (vector<processt> wait_list){
 						wait_list[i].TARQ --;
 					}
 					if (wait_list[i].TARQ == 0){
-						ready_list.push_back(wait_list[i]);//algorithm
+						schedule_function(&ready_list,wait_list[i]);
+						//ready_list.push_back(wait_list[i]);//algorithm
 						wait_list.erase(wait_list.begin()+i);
 					}
 				}
@@ -199,4 +196,8 @@ void similator (vector<processt> wait_list){
 	}
 	//ready_list.insert(ready_list.begin(), finish_list.begin(), finish_list.end());
 	return;
+}
+
+void FCFS (vector<processt> *process_list, processt new_process){
+	(*process_list).push_back(new_process);
 }
