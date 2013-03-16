@@ -17,6 +17,7 @@ processt all_process[MAX_PROCESS];
 typedef bool (*schedule_t) (processt *process_list, int process_c);
 int string_spliter(string, int*, string);
 processt string_parser(string);
+void similator (vector<processt> process_list);
 
 /*
 //Algorithm Template
@@ -48,7 +49,6 @@ int main(){
 	cout << "Please enter the absolute path of the file: ";
 	cin >> path;
 	myfile.open(path.c_str());
-	//myfile<<"Writing this to a file..... \n";
 	int line_counter = 0;
 	vector<processt> all_process;
 	/*
@@ -61,7 +61,7 @@ int main(){
 	if (myfile.is_open()){
 		while (myfile.good()){
 			getline (myfile,line);
-			all_process.push_back(string_parser (line));
+			all_process.push_back(string_parser(line));
 		};
 	}
 	myfile.close();
@@ -69,7 +69,7 @@ int main(){
 	schedule_functinos[1] (all_process, line_counter);
 	schedule_functinos[0] (all_process, line_counter);
 	*/
-	
+	//similator(all_process);
 	for(int i=0; i != all_process.size(); i++){
 		cout <<"Process: "<<all_process[i].PID<<" ";
 		cout <<all_process[i].TARQ<<" ";
@@ -83,7 +83,6 @@ int main(){
 		}
 		cout <<endl;
 	}
-
 	cin.ignore(); 
     cin.get();
 	cout<<"terminating..."<<endl;
@@ -127,4 +126,46 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	}
 	return out_process;
 	//out_process[p_index].TNCPU = att[3];
+}
+
+void similator (vector<processt> ready_list){
+	vector<processt> cpu;
+	vector<processt> io_list;
+	vector<processt> finish_list;
+	int timer;
+	while ((ready_list.size() != 0)&&(cpu.size() != 0)&&(io_list.size() != 0)){
+		if (cpu.size() == 0){
+			cpu.push_back(ready_list.front());
+			ready_list.erase(ready_list.begin());
+			//cpu.front().current_bursts++;
+		}
+		else {
+			for (int i = io_list.size()-1; i >=0; i--){
+				if (io_list[i].IO[io_list[i].current_bursts] > 0){
+					io_list[i].IO[io_list[i].current_bursts]--;
+				}
+				if (io_list[i].IO[io_list[i].current_bursts] == 0){
+					io_list[i].current_bursts++;
+					ready_list.push_back(io_list[i]);//this is where the algorithm should go
+					io_list.erase(io_list.begin()+i);
+				}
+			}
+					
+			if (cpu.front().CPU[cpu.front().current_bursts] > 0){
+				cpu.front().CPU[cpu.front().current_bursts]--;
+			}
+			if (cpu.front().CPU[cpu.front().current_bursts] == 0){
+				if (cpu.front().current_bursts>=(cpu.front().TNCPU-1)){
+					finish_list.push_back(cpu.front());
+				}
+				else{
+					io_list.push_back(cpu.front());
+				}
+				cpu.erase(cpu.begin());
+			}
+			
+			
+		}
+	}
+	return;
 }
