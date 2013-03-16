@@ -12,6 +12,7 @@ struct processt {
 	int wait_time;
 	int execution_time;
 	int turnaround_time;
+	int age;
 };
 
 #endif
