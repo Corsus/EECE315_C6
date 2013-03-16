@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "processt.hpp"
+#include "gantt_data.hpp"
 #include <vector>
 
 using namespace std;
@@ -17,8 +18,9 @@ processt all_process[MAX_PROCESS];
 typedef void (*schedule_t) (vector<processt> *process_list, processt new_process);
 int string_spliter(string, int*, string);
 processt string_parser(string);
-void similator (vector<processt> process_list, schedule_t schedule_function, vector<processt> *finish_list);
+void similator (vector<processt> process_list, schedule_t schedule_function, vector<processt> *finish_list, vector<gantt_data> *gantt_data_list);
 
+//void result_display (vector<processt> process_list, vector<gantt_data> gd_list);
 /*
 void test_function (vector<processt> *ready_list){
 	(*ready_list).front().PID = 300;
@@ -69,8 +71,9 @@ int main(){
 	myfile.close();
 	
 	vector<processt> finish_list;
+	vector<gantt_data> gantt_data_list;
 
-	similator(all_process, schedule_functinos[0], &finish_list);
+	similator(all_process, schedule_functinos[0], &finish_list, &gantt_data_list);
 	//test_function(&all_process);
 	for(int i=0; i != all_process.size(); i++){
 		cout <<"Process: "<<all_process[i].PID<<" ";
@@ -136,7 +139,7 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	//out_process[p_index].TNCPU = att[3];
 }
 
-void similator (vector<processt> wait_list, schedule_t schedule_function, vector<processt> *finish_list){
+void similator (vector<processt> wait_list, schedule_t schedule_function, vector<processt> *finish_list, vector<gantt_data> *gantt_data_list){
 	vector<processt> cpu;
 	vector<processt> io_list;
 	//vector<processt> finish_list;
@@ -144,17 +147,39 @@ void similator (vector<processt> wait_list, schedule_t schedule_function, vector
 
 	int timer = 0;
 	while ((wait_list.size() != 0)||(cpu.size() != 0)||(io_list.size() != 0)||(ready_list.size() != 0)){ 
-		timer++;
+		//timer++;
+
+		if (wait_list.size() != 0){
+				for (int i = wait_list.size()-1; i>= 0; i--){
+					if (wait_list[i].TARQ == 0){
+						schedule_function(&ready_list,wait_list[i]);
+						//ready_list.push_back(wait_list[i]);//algorithm
+						wait_list.erase(wait_list.begin()+i);
+					}
+				}
+
+				for (int i = wait_list.size()-1; i>= 0; i--){
+					if (wait_list[i].TARQ > 0){
+						wait_list[i].TARQ --;
+					}
+				}
+			}
 
 		//make sure cpu is not empty
 		if (cpu.size() == 0){
 			if(ready_list.size()!=0){
 				cpu.push_back(ready_list.front());
 				ready_list.erase(ready_list.begin());
+				gantt_data new_data;
+				new_data.PID = cpu.front().PID;
+				new_data.time = timer;
+				(*gantt_data_list).push_back(new_data);
 				//cpu.front().current_bursts++;
 			}
 		}
 		
+		timer++;
+
 		//wait time count ++ for all processes in the ready list
 		if (ready_list.size() != 0){
 			for (int i = ready_list.size()-1; i>=0; i--){
@@ -196,18 +221,7 @@ void similator (vector<processt> wait_list, schedule_t schedule_function, vector
 				}	
 			}
 
-			if (wait_list.size() != 0){
-				for (int i = wait_list.size()-1; i>= 0; i--){
-					if (wait_list[i].TARQ > 0){
-						wait_list[i].TARQ --;
-					}
-					if (wait_list[i].TARQ == 0){
-						schedule_function(&ready_list,wait_list[i]);
-						//ready_list.push_back(wait_list[i]);//algorithm
-						wait_list.erase(wait_list.begin()+i);
-					}
-				}
-			}
+			
 		
 	}
 	//ready_list.insert(ready_list.begin(), finish_list.begin(), finish_list.end());
