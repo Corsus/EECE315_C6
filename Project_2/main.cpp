@@ -15,10 +15,10 @@ using namespace std;
 
 processt all_process[MAX_PROCESS];
 
-typedef void (*schedule_t) (vector<processt> *process_list, processt new_process);
+typedef void (*schedule_t) (vector<processt> *process_list, processt new_process, int arg);
 int string_spliter(string, int*, string);
 processt string_parser(string);
-void similator (vector<processt> process_list, schedule_t schedule_function, vector<processt> *finish_list, vector<gantt_data> *gantt_data_list);
+void similator (vector<processt> process_list, schedule_t schedule_function, vector<processt> *finish_list, vector<gantt_data> *gantt_data_list, int age_scale);
 
 void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list);
 /*
@@ -31,7 +31,8 @@ void test_function (vector<processt> *ready_list){
 //Algorithm Template
 //=============================================================
 
-void FCFS (vector<processt> *process_list, processt new_process);
+void FCFS (vector<processt> *process_list, processt new_process, int arg);
+void priority_npr (vector<processt> *process_list, processt new_process, int arg);
 
 /*
 bool schedule2 (process_t *process_list, int process_c){
@@ -59,7 +60,8 @@ int main(){
 	
 	schedule_t schedule_functinos[] =
 	{
-		FCFS
+		FCFS,
+		priority_npr
 	};
 	
 	if (myfile.is_open()){
@@ -72,8 +74,9 @@ int main(){
 	
 	vector<processt> finish_list;
 	vector<gantt_data> gantt_data_list;
+	int age_scale = 20;//should be input by user
 
-	similator(all_process, schedule_functinos[0], &finish_list, &gantt_data_list);
+	similator(all_process, schedule_functinos[1], &finish_list, &gantt_data_list, age_scale);
 	
 	result_display(&finish_list, &gantt_data_list);
 	cin.ignore(); 
@@ -127,7 +130,7 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	//out_process[p_index].TNCPU = att[3];
 }
 
-void similator (vector<processt> wait_list, schedule_t schedule_function, vector<processt> *finish_list, vector<gantt_data> *gantt_data_list){
+void similator (vector<processt> wait_list, schedule_t schedule_function, vector<processt> *finish_list, vector<gantt_data> *gantt_data_list, int age_scale){
 	vector<processt> cpu;
 	vector<processt> io_list;
 	//vector<processt> finish_list;
@@ -140,7 +143,9 @@ void similator (vector<processt> wait_list, schedule_t schedule_function, vector
 		if (wait_list.size() != 0){
 				for (int i = wait_list.size()-1; i>= 0; i--){
 					if (wait_list[i].TARQ == 0){
-						schedule_function(&ready_list,wait_list[i]);
+
+						wait_list[i].age = 0; //reset age before entering the ready list
+						schedule_function(&ready_list,wait_list[i],age_scale);
 						//ready_list.push_back(wait_list[i]);//algorithm
 						wait_list.erase(wait_list.begin()+i);
 					}
@@ -172,6 +177,7 @@ void similator (vector<processt> wait_list, schedule_t schedule_function, vector
 		if (ready_list.size() != 0){
 			for (int i = ready_list.size()-1; i>=0; i--){
 				ready_list[i].wait_time++;
+				ready_list[i].age++;
 			}
 		}
 
@@ -183,7 +189,9 @@ void similator (vector<processt> wait_list, schedule_t schedule_function, vector
 					}
 					if (io_list[i].IO[io_list[i].current_burst] == 0){
 						io_list[i].current_burst++;
-						schedule_function(&ready_list, io_list[i]);
+
+						io_list[i].age = 0;//reset age before entering the ready lisst
+						schedule_function(&ready_list, io_list[i], age_scale);
 						//ready_list.push_back(io_list[i]);//this is where the algorithm should go
 						io_list.erase(io_list.begin()+i);
 					}
@@ -205,6 +213,10 @@ void similator (vector<processt> wait_list, schedule_t schedule_function, vector
 					else{
 						io_list.push_back(cpu.front());
 					}
+					gantt_data new_data;
+					new_data.PID = -1;
+					new_data.time = timer;
+					(*gantt_data_list).push_back(new_data);
 					cpu.erase(cpu.begin());
 				}	
 			}
@@ -214,10 +226,6 @@ void similator (vector<processt> wait_list, schedule_t schedule_function, vector
 	}
 	//ready_list.insert(ready_list.begin(), finish_list.begin(), finish_list.end());
 	return;
-}
-
-void FCFS (vector<processt> *process_list, processt new_process){
-	(*process_list).push_back(new_process);
 }
 
 void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list){
@@ -239,4 +247,30 @@ void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list
 		cout <<"CPU Time: "<< (*gd_list)[i].time<<", PID: "<<(*gd_list)[i].PID<<endl;
 	}
 	
+}
+
+void FCFS (vector<processt> *process_list, processt new_process, int arg){
+	(*process_list).push_back(new_process);
+}
+
+void priority_npr (vector<processt> *process_list, processt new_process, int age_scale){
+	int count = 0;
+	//bool inserted = false;
+	if ((*process_list).size() > 0){
+		while (true){
+			//compare priority with age being considered
+			if (new_process.PRIO < ((*process_list)[count].PRIO - ((*process_list)[count].age)/age_scale)){
+				(*process_list).insert((*process_list).begin()+count, new_process);
+			}
+			count++;
+			if (count >= (*process_list).size()){
+				break;
+			}
+		}
+	}
+
+	else{
+		(*process_list).push_back(new_process);
+	}
+	return;
 }
