@@ -20,7 +20,7 @@ int string_spliter(string, int*, string);
 processt string_parser(string);
 void similator (vector<processt> process_list, schedule_t schedule_function, vector<processt> *finish_list, vector<gantt_data> *gantt_data_list);
 
-//void result_display (vector<processt> process_list, vector<gantt_data> gd_list);
+void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list);
 /*
 void test_function (vector<processt> *ready_list){
 	(*ready_list).front().PID = 300;
@@ -74,20 +74,8 @@ int main(){
 	vector<gantt_data> gantt_data_list;
 
 	similator(all_process, schedule_functinos[0], &finish_list, &gantt_data_list);
-	//test_function(&all_process);
-	for(int i=0; i != all_process.size(); i++){
-		cout <<"Process: "<<all_process[i].PID<<" ";
-		cout <<all_process[i].TARQ<<" ";
-		cout <<all_process[i].PRIO<<" ";
-		cout <<all_process[i].TNCPU<<endl;
-		cout <<"CPU/IO Burst: ";
-		for (int j=0; j<all_process[i].TNCPU; j++){
-			cout <<all_process[i].CPU[j]<<" ";
-			if(!(all_process[i].TNCPU == j+1))
-				cout <<all_process[i].IO[j]<<" ";
-		}
-		cout <<endl;
-	}
+	
+	result_display(&finish_list, &gantt_data_list);
 	cin.ignore(); 
     cin.get();
 	cout<<"terminating..."<<endl;
@@ -230,4 +218,25 @@ void similator (vector<processt> wait_list, schedule_t schedule_function, vector
 
 void FCFS (vector<processt> *process_list, processt new_process){
 	(*process_list).push_back(new_process);
+}
+
+void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list){
+	for(int i=0; i != (*process_list).size(); i++){
+		cout <<"Process "<<(*process_list)[i].PID<<", ";
+		cout <<"execution Time: "<<(*process_list)[i].execution_time<<", ";
+		cout <<"wait time: "<<(*process_list)[i].wait_time<<", ";
+		cout <<"turnaround time: "<<(*process_list)[i].turnaround_time<<endl;
+		/*
+		cout <<"CPU/IO Burst: ";
+		for (int j=0; j<all_process[i].TNCPU; j++){
+			cout <<all_process[i].CPU[j]<<" ";
+			if(!(all_process[i].TNCPU == j+1))
+				cout <<all_process[i].IO[j]<<" ";
+		}*/
+	}
+	cout <<"draft gantt chat: "<<endl;
+	for (int i=0; i<(*gd_list).size(); i++){
+		cout <<"CPU Time: "<< (*gd_list)[i].time<<", PID: "<<(*gd_list)[i].PID<<endl;
+	}
+	
 }
