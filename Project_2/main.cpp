@@ -141,21 +141,21 @@ void similator (vector<processt> ready_list){
 		}
 		else {
 			for (int i = io_list.size()-1; i >=0; i--){
-				if (io_list[i].IO[io_list[i].current_bursts] > 0){
-					io_list[i].IO[io_list[i].current_bursts]--;
+				if (io_list[i].IO[io_list[i].current_burst] > 0){
+					io_list[i].IO[io_list[i].current_burst]--;
 				}
-				if (io_list[i].IO[io_list[i].current_bursts] == 0){
-					io_list[i].current_bursts++;
+				if (io_list[i].IO[io_list[i].current_burst] == 0){
+					io_list[i].current_burst++;
 					ready_list.push_back(io_list[i]);//this is where the algorithm should go
 					io_list.erase(io_list.begin()+i);
 				}
 			}
 					
-			if (cpu.front().CPU[cpu.front().current_bursts] > 0){
-				cpu.front().CPU[cpu.front().current_bursts]--;
+			if (cpu.front().CPU[cpu.front().current_burst] > 0){
+				cpu.front().CPU[cpu.front().current_burst]--;
 			}
-			if (cpu.front().CPU[cpu.front().current_bursts] == 0){
-				if (cpu.front().current_bursts>=(cpu.front().TNCPU-1)){
+			if (cpu.front().CPU[cpu.front().current_burst] == 0){
+				if (cpu.front().current_burst>=(cpu.front().TNCPU-1)){
 					finish_list.push_back(cpu.front());
 				}
 				else{
