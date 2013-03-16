@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "processt.hpp"
-#include <list>
+#include <vector>
 
 using namespace std;
 
@@ -50,7 +50,7 @@ int main(){
 	myfile.open(path.c_str());
 	//myfile<<"Writing this to a file..... \n";
 	int line_counter = 0;
-	list<processt> all_process;
+	vector<processt> all_process;
 	/*
 	schedule_t schedule_functinos[] =
 	{
@@ -69,17 +69,17 @@ int main(){
 	schedule_functinos[1] (all_process, line_counter);
 	schedule_functinos[0] (all_process, line_counter);
 	*/
-	list<processt>::iterator i;
-	for(i=all_process.begin(); i != all_process.end(); i++){
-		cout <<"Process: "<<(*i).PID<<" ";
-		cout <<(*i).TARQ<<" ";
-		cout <<(*i).PRIO<<" ";
-		cout <<(*i).TNCPU<<endl;
+	
+	for(int i=0; i != all_process.size(); i++){
+		cout <<"Process: "<<all_process[i].PID<<" ";
+		cout <<all_process[i].TARQ<<" ";
+		cout <<all_process[i].PRIO<<" ";
+		cout <<all_process[i].TNCPU<<endl;
 		cout <<"CPU/IO Burst: ";
-		for (int j=0; j<(*i).TNCPU; j++){
-			cout <<(*i).CPU[j]<<" ";
-			if(!((*i).TNCPU == j+1))
-				cout <<(*i).IO[j]<<" ";
+		for (int j=0; j<all_process[i].TNCPU; j++){
+			cout <<all_process[i].CPU[j]<<" ";
+			if(!(all_process[i].TNCPU == j+1))
+				cout <<all_process[i].IO[j]<<" ";
 		}
 		cout <<endl;
 	}
