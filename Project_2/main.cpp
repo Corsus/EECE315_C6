@@ -20,6 +20,12 @@ processt string_parser(string);
 void similator (vector<processt> process_list);
 
 /*
+void test_function (vector<processt> *ready_list){
+	(*ready_list).front().PID = 300;
+	cout<<"test1 "<<(*ready_list).front().PID<<endl;
+}*/
+
+/*
 //Algorithm Template
 //=============================================================
 bool schedule1 (process_t *process_list, int process_c){
@@ -46,8 +52,9 @@ int main(){
 	ifstream myfile;
 	string line;
 	string path;
-	cout << "Please enter the absolute path of the file: ";
-	cin >> path;
+	//cout << "Please enter the absolute path of the file: ";
+	//cin >> path;
+	path = "e:/example.txt";
 	myfile.open(path.c_str());
 	int line_counter = 0;
 	vector<processt> all_process;
@@ -69,7 +76,8 @@ int main(){
 	schedule_functinos[1] (all_process, line_counter);
 	schedule_functinos[0] (all_process, line_counter);
 	*/
-	//similator(all_process);
+	similator(all_process);
+	//test_function(&all_process);
 	for(int i=0; i != all_process.size(); i++){
 		cout <<"Process: "<<all_process[i].PID<<" ";
 		cout <<all_process[i].TARQ<<" ";
@@ -114,6 +122,7 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	out_process.TARQ = att[1];
 	out_process.PRIO = att[2];
 	out_process.TNCPU = att[3];
+	out_process.current_burst = 0;
 	for (int i = 4; i < total_att; i++){
 		if ((i%2) == 0){ 
 			out_process.CPU[cpu_c] = att[i];
@@ -128,44 +137,66 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	//out_process[p_index].TNCPU = att[3];
 }
 
-void similator (vector<processt> ready_list){
+void similator (vector<processt> wait_list){
 	vector<processt> cpu;
 	vector<processt> io_list;
 	vector<processt> finish_list;
+	vector<processt> ready_list;
+
 	int timer;
-	while ((ready_list.size() != 0)&&(cpu.size() != 0)&&(io_list.size() != 0)){
+	while ((wait_list.size() != 0)||(cpu.size() != 0)||(io_list.size() != 0)||(ready_list.size() != 0)){ 
+		//make sure cpu is not empty
 		if (cpu.size() == 0){
-			cpu.push_back(ready_list.front());
-			ready_list.erase(ready_list.begin());
-			//cpu.front().current_bursts++;
+			if(ready_list.size()!=0){
+				cpu.push_back(ready_list.front());
+				ready_list.erase(ready_list.begin());
+				//cpu.front().current_bursts++;
+			}
 		}
-		else {
-			for (int i = io_list.size()-1; i >=0; i--){
-				if (io_list[i].IO[io_list[i].current_burst] > 0){
-					io_list[i].IO[io_list[i].current_burst]--;
+		
+		//decrease the io count down for processes in the io_list
+			if (io_list.size() != 0){
+				for (int i = io_list.size()-1; i >=0; i--){
+					if (io_list[i].IO[io_list[i].current_burst] > 0){
+						io_list[i].IO[io_list[i].current_burst]--;
+					}
+					if (io_list[i].IO[io_list[i].current_burst] == 0){
+						io_list[i].current_burst++;
+						ready_list.push_back(io_list[i]);//this is where the algorithm should go
+						io_list.erase(io_list.begin()+i);
+					}
 				}
-				if (io_list[i].IO[io_list[i].current_burst] == 0){
-					io_list[i].current_burst++;
-					ready_list.push_back(io_list[i]);//this is where the algorithm should go
-					io_list.erase(io_list.begin()+i);
-				}
-			}
-					
-			if (cpu.front().CPU[cpu.front().current_burst] > 0){
-				cpu.front().CPU[cpu.front().current_burst]--;
-			}
-			if (cpu.front().CPU[cpu.front().current_burst] == 0){
-				if (cpu.front().current_burst>=(cpu.front().TNCPU-1)){
-					finish_list.push_back(cpu.front());
-				}
-				else{
-					io_list.push_back(cpu.front());
-				}
-				cpu.erase(cpu.begin());
 			}
 			
-			
-		}
+			//decrease the cpu count down for processes in the cpu list
+			if (cpu.size() != 0){
+				if (cpu.front().CPU[cpu.front().current_burst] > 0){
+					cpu.front().CPU[cpu.front().current_burst]--;
+				}
+				if (cpu.front().CPU[cpu.front().current_burst] == 0){
+					if (cpu.front().current_burst>=(cpu.front().TNCPU-1)){
+						finish_list.push_back(cpu.front());
+					}
+					else{
+						io_list.push_back(cpu.front());
+					}
+					cpu.erase(cpu.begin());
+				}	
+			}
+
+			if (wait_list.size() != 0){
+				for (int i = wait_list.size()-1; i>= 0; i--){
+					if (wait_list[i].TARQ > 0){
+						wait_list[i].TARQ --;
+					}
+					if (wait_list[i].TARQ == 0){
+						ready_list.push_back(wait_list[i]);//algorithm
+						wait_list.erase(wait_list.begin()+i);
+					}
+				}
+			}
+		
 	}
+	//ready_list.insert(ready_list.begin(), finish_list.begin(), finish_list.end());
 	return;
 }
