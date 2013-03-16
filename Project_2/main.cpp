@@ -17,7 +17,7 @@ processt all_process[MAX_PROCESS];
 typedef void (*schedule_t) (vector<processt> *process_list, processt new_process);
 int string_spliter(string, int*, string);
 processt string_parser(string);
-void similator (vector<processt> process_list, schedule_t schedule_function);
+void similator (vector<processt> process_list, schedule_t schedule_function, vector<processt> *finish_list);
 
 /*
 void test_function (vector<processt> *ready_list){
@@ -67,11 +67,10 @@ int main(){
 		};
 	}
 	myfile.close();
-	/*
-	schedule_functinos[1] (all_process, line_counter);
-	schedule_functinos[0] (all_process, line_counter);
-	*/
-	similator(all_process, schedule_functinos[0]);
+	
+	vector<processt> finish_list;
+
+	similator(all_process, schedule_functinos[0], &finish_list);
 	//test_function(&all_process);
 	for(int i=0; i != all_process.size(); i++){
 		cout <<"Process: "<<all_process[i].PID<<" ";
@@ -117,7 +116,12 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	out_process.TARQ = att[1];
 	out_process.PRIO = att[2];
 	out_process.TNCPU = att[3];
+	//initialize other variables in the process
 	out_process.current_burst = 0;
+	out_process.execution_time = 0;
+	out_process.turnaround_time = 0;
+	out_process.wait_time = 0;
+
 	for (int i = 4; i < total_att; i++){
 		if ((i%2) == 0){ 
 			out_process.CPU[cpu_c] = att[i];
@@ -132,14 +136,16 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	//out_process[p_index].TNCPU = att[3];
 }
 
-void similator (vector<processt> wait_list, schedule_t schedule_function){
+void similator (vector<processt> wait_list, schedule_t schedule_function, vector<processt> *finish_list){
 	vector<processt> cpu;
 	vector<processt> io_list;
-	vector<processt> finish_list;
+	//vector<processt> finish_list;
 	vector<processt> ready_list;
 
-	int timer;
+	int timer = 0;
 	while ((wait_list.size() != 0)||(cpu.size() != 0)||(io_list.size() != 0)||(ready_list.size() != 0)){ 
+		timer++;
+
 		//make sure cpu is not empty
 		if (cpu.size() == 0){
 			if(ready_list.size()!=0){
@@ -149,6 +155,13 @@ void similator (vector<processt> wait_list, schedule_t schedule_function){
 			}
 		}
 		
+		//wait time count ++ for all processes in the ready list
+		if (ready_list.size() != 0){
+			for (int i = ready_list.size()-1; i>=0; i--){
+				ready_list[i].wait_time++;
+			}
+		}
+
 		//decrease the io count down for processes in the io_list
 			if (io_list.size() != 0){
 				for (int i = io_list.size()-1; i >=0; i--){
@@ -168,10 +181,13 @@ void similator (vector<processt> wait_list, schedule_t schedule_function){
 			if (cpu.size() != 0){
 				if (cpu.front().CPU[cpu.front().current_burst] > 0){
 					cpu.front().CPU[cpu.front().current_burst]--;
+					cpu.front().execution_time++;//excution time count ++ 
 				}
 				if (cpu.front().CPU[cpu.front().current_burst] == 0){
+					//if all bursts are finished 
 					if (cpu.front().current_burst>=(cpu.front().TNCPU-1)){
-						finish_list.push_back(cpu.front());
+						cpu.front().turnaround_time = timer;//save the current time as turnaround time
+						(*finish_list).push_back(cpu.front());
 					}
 					else{
 						io_list.push_back(cpu.front());
