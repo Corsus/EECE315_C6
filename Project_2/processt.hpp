@@ -9,6 +9,9 @@ struct processt {
 	int CPU[100];
 	int IO[99];
 	int current_burst; //indicates the current CPU burst, set to 0 if no burst has occured 
+	int wait_time;
+	int execution_time;
+	int turnaround_time;
 };
 
 #endif
