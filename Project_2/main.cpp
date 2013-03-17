@@ -9,7 +9,7 @@
 
 using namespace std;
 
-#define MAX_CPU_BURST 100
+//#define MAX_CPU_BURST 100
 //#define MAX_IO_BURST 100
 #define MAX_PROCESS 100
 
@@ -18,7 +18,19 @@ processt all_process[MAX_PROCESS];
 typedef void (*schedule_t) (vector<processt> *process_list, processt new_process, int arg);
 int string_spliter(string, int*, string);
 processt string_parser(string);
-void similator (vector<processt> process_list, schedule_t schedule_function, vector<processt> *finish_list, vector<gantt_data> *gantt_data_list, int age_scale);
+void similator (
+	vector<processt> process_list, 
+	schedule_t schedule_function, 
+	vector<processt> *finish_list, 
+	vector<gantt_data> *gantt_data_list, 
+	int age_scale,
+	bool round_robin,
+	int quantum_time
+	);
+
+int set_parameters (
+	int algorithm_index,
+	bool *round_robin);
 
 void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list);
 /*
@@ -75,8 +87,17 @@ int main(){
 	vector<processt> finish_list;
 	vector<gantt_data> gantt_data_list;
 	int age_scale = 20;//should be input by user
+	bool round_robin;
+	int quantum_time = 10;
+	int algorithm_index = set_parameters(0, &round_robin);
 
-	similator(all_process, schedule_functinos[1], &finish_list, &gantt_data_list, age_scale);
+	similator(
+		all_process, schedule_functinos[algorithm_index], 
+		&finish_list, 
+		&gantt_data_list, 
+		age_scale, 
+		round_robin, 
+		quantum_time);
 	
 	result_display(&finish_list, &gantt_data_list);
 	cin.ignore(); 
@@ -130,12 +151,20 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	//out_process[p_index].TNCPU = att[3];
 }
 
-void similator (vector<processt> wait_list, schedule_t schedule_function, vector<processt> *finish_list, vector<gantt_data> *gantt_data_list, int age_scale){
+void similator (
+	vector<processt> wait_list, 
+	schedule_t schedule_function, 
+	vector<processt> *finish_list, 
+	vector<gantt_data> *gantt_data_list, 
+	int age_scale,
+	bool round_robin,
+	int quantum_time
+	){
 	vector<processt> cpu;
 	vector<processt> io_list;
 	//vector<processt> finish_list;
 	vector<processt> ready_list;
-
+	int quantum_time_c = 0;
 	int timer = 0;
 	while ((wait_list.size() != 0)||(cpu.size() != 0)||(io_list.size() != 0)||(ready_list.size() != 0)){ 
 		//timer++;
@@ -158,16 +187,30 @@ void similator (vector<processt> wait_list, schedule_t schedule_function, vector
 				}
 			}
 
-		//make sure cpu is not empty
+		//if cpu is idle
 		if (cpu.size() == 0){
 			if(ready_list.size()!=0){
 				cpu.push_back(ready_list.front());
 				ready_list.erase(ready_list.begin());
 				gantt_data new_data;
+
+				//record gantt data
+				
+
 				new_data.PID = cpu.front().PID;
 				new_data.time = timer;
-				(*gantt_data_list).push_back(new_data);
-				//cpu.front().current_bursts++;
+				if(
+					((*gantt_data_list).size()!=0) &&
+					((*gantt_data_list).back().PID == -1) &&
+					((*gantt_data_list).back().time == timer)
+					){
+					(*gantt_data_list).back() = new_data;
+				}
+				else{
+					(*gantt_data_list).push_back(new_data);
+				}
+				
+				
 			}
 		}
 		
@@ -178,8 +221,8 @@ void similator (vector<processt> wait_list, schedule_t schedule_function, vector
 			for (int i = ready_list.size()-1; i>=0; i--){
 				ready_list[i].wait_time++;
 				ready_list[i].age++;
-			}
-		}
+			} 
+		}  
 
 		//decrease the io count down for processes in the io_list
 			if (io_list.size() != 0){
@@ -203,6 +246,8 @@ void similator (vector<processt> wait_list, schedule_t schedule_function, vector
 				if (cpu.front().CPU[cpu.front().current_burst] > 0){
 					cpu.front().CPU[cpu.front().current_burst]--;
 					cpu.front().execution_time++;//excution time count ++ 
+
+					quantum_time_c++;
 				}
 				if (cpu.front().CPU[cpu.front().current_burst] == 0){
 					//if all bursts are finished 
@@ -213,12 +258,34 @@ void similator (vector<processt> wait_list, schedule_t schedule_function, vector
 					else{
 						io_list.push_back(cpu.front());
 					}
+
+					//record gantt data
 					gantt_data new_data;
 					new_data.PID = -1;
 					new_data.time = timer;
 					(*gantt_data_list).push_back(new_data);
+
+
 					cpu.erase(cpu.begin());
-				}	
+
+					quantum_time_c = 0;
+				}
+
+				//if quantum time count is up, given the round_robin algorithm is being used
+				if((quantum_time_c>=quantum_time)&&(round_robin)){
+					//going back to ready_list through the schedule function
+					schedule_function(&ready_list, cpu.front(), age_scale);
+					
+					//record gantt data
+					gantt_data new_data;
+					new_data.PID = -1;
+					new_data.time = timer;
+					(*gantt_data_list).push_back(new_data);
+
+					cpu.erase(cpu.begin());
+
+					quantum_time_c = 0;
+				}
 			}
 
 			
@@ -243,18 +310,40 @@ void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list
 		}*/
 	}
 	cout <<"draft gantt chat: "<<endl;
-	for (int i=0; i<(*gd_list).size(); i++){
+	for (int unsigned i=0; i<(*gd_list).size(); i++){
 		cout <<"CPU Time: "<< (*gd_list)[i].time<<", PID: "<<(*gd_list)[i].PID<<endl;
 	}
 	
 }
+
+int set_parameters (
+	int algorithm_index,
+	bool *round_robin){
+		*round_robin = false;
+		if (algorithm_index == 0){
+			//*age_scale = 0;
+			//*round_robin = false;
+			return 0;
+		}
+		else if(algorithm_index == 1){
+			return 1;
+		}
+		else if(algorithm_index == 2){
+			*round_robin = true;
+			return 0;
+		}
+		else{
+			return 0;
+		}
+}
+		
 
 void FCFS (vector<processt> *process_list, processt new_process, int arg){
 	(*process_list).push_back(new_process);
 }
 
 void priority_npr (vector<processt> *process_list, processt new_process, int age_scale){
-	int count = 0;
+	int unsigned count = 0;
 	//bool inserted = false;
 	if ((*process_list).size() > 0){
 		while (true){
@@ -274,3 +363,4 @@ void priority_npr (vector<processt> *process_list, processt new_process, int age
 	}
 	return;
 }
+
