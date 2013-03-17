@@ -45,6 +45,7 @@ void test_function (vector<processt> *ready_list){
 
 void FCFS (vector<processt> *process_list, processt new_process, int arg);
 void priority_npr (vector<processt> *process_list, processt new_process, int arg);
+void SJF (vector<processt> *process_list, processt new_process, int arg);
 
 /*
 bool schedule2 (process_t *process_list, int process_c){
@@ -73,7 +74,8 @@ int main(){
 	schedule_t schedule_functinos[] =
 	{
 		FCFS,
-		priority_npr
+		priority_npr,
+		SJF
 	};
 	
 	if (myfile.is_open()){
@@ -231,7 +233,7 @@ void similator (
 						io_list[i].IO[io_list[i].current_burst]--;
 					}
 					if (io_list[i].IO[io_list[i].current_burst] == 0){
-						io_list[i].current_burst++;
+						io_list[i].current_burst++;//current_burst is increased when an io burst is finished
 
 						io_list[i].age = 0;//reset age before entering the ready lisst
 						schedule_function(&ready_list, io_list[i], age_scale);
@@ -332,6 +334,10 @@ int set_parameters (
 			*round_robin = true;
 			return 0;
 		}
+		else if(algorithm_index == 3){
+			return 2;
+		}
+
 		else{
 			return 0;
 		}
@@ -345,22 +351,29 @@ void FCFS (vector<processt> *process_list, processt new_process, int arg){
 void priority_npr (vector<processt> *process_list, processt new_process, int age_scale){
 	int unsigned count = 0;
 	//bool inserted = false;
-	if ((*process_list).size() > 0){
-		while (true){
+	//if ((*process_list).size() > 0){
+	while(count< (*process_list).size() ){
 			//compare priority with age being considered
-			if (new_process.PRIO < ((*process_list)[count].PRIO - ((*process_list)[count].age)/age_scale)){
-				(*process_list).insert((*process_list).begin()+count, new_process);
-			}
-			count++;
-			if (count >= (*process_list).size()){
-				break;
-			}
+		if (new_process.PRIO < ((*process_list)[count].PRIO - ((*process_list)[count].age)/age_scale)){
+			(*process_list).insert((*process_list).begin()+count, new_process);
+			return;
 		}
+		count++;
 	}
-
-	else{
-		(*process_list).push_back(new_process);
-	}
+	(*process_list).push_back(new_process);
 	return;
 }
 
+void SJF (vector<processt> *process_list, processt new_process, int age_scale){ 
+	int unsigned count = 0;
+	while(count < (*process_list).size() ){
+			if (new_process.CPU[new_process.current_burst] < 
+				( (*process_list)[count].CPU[(*process_list)[count].current_burst] - ((*process_list)[count].age)/age_scale ) ){
+				(*process_list).insert((*process_list).begin()+count, new_process);
+				return;
+			}
+			count++;
+	}
+	(*process_list).push_back(new_process);
+	return;
+}
