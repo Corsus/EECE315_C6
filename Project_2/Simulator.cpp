@@ -13,6 +13,10 @@ public:
 		this->mode = mode;
 	}
 
+	void setTimeQuantum(int timeQuantum) {
+		scheduler.setTimeQuantum(timeQuantum);
+	}
+
 	int tick() {
 		int index = scheduler.nextProcess(masterProcessList, mode);
 
