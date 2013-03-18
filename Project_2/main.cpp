@@ -28,12 +28,14 @@ void similator (
 	int age_scale,
 	bool round_robin,
 	int quantum_time,
-	float weight_coef
+	float weight_coef,
+	bool impatient_prio
 	);
 
 int set_parameters (
 	int algorithm_index,
-	bool *round_robin);
+	bool *round_robin,
+	bool *impatient_prio);
 
 void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list);
 /*
@@ -95,16 +97,18 @@ int main(){
 	int age_scale = 20;//should be input by user
 	bool round_robin;
 	int quantum_time = 10;
-	int algorithm_index = set_parameters(4, &round_robin);
+	bool impatient_prio = true;
+	int schedule_func_index = set_parameters(6, &round_robin, &impatient_prio);
 	float weight_coef =0.5 ;
 	similator(
-		all_process, schedule_functinos[algorithm_index], 
+		all_process, schedule_functinos[schedule_func_index], 
 		&finish_list, 
 		&gantt_data_list, 
 		age_scale, 
 		round_robin, 
 		quantum_time,
-		weight_coef);
+		weight_coef,
+		impatient_prio);
 	
 	result_display(&finish_list, &gantt_data_list);
 	cin.ignore(); 
@@ -169,7 +173,8 @@ void similator (
 	int age_scale,
 	bool round_robin,
 	int quantum_time, 
-	float weight_coef
+	float weight_coef,
+	bool impatient_prio
 	){
 	vector<processt> cpu;
 	vector<processt> io_list;
@@ -177,9 +182,17 @@ void similator (
 	vector<processt> ready_list;
 	int quantum_time_c = 0;
 	int timer = 0;
-	while ((wait_list.size() != 0)||(cpu.size() != 0)||(io_list.size() != 0)||(ready_list.size() != 0)){ 
-		//timer++;
 
+	processt cpu_io_buffer;//buffer between cpu to io;
+	processt io_ready_buffer;
+	processt cpu_ready_buffer;
+	bool cpu_io_ready = false;//indicates whether the buffer is ready
+	bool io_ready_ready = false;
+	bool cpu_ready_ready = false;
+
+	while ((wait_list.size() != 0)||(cpu.size() != 0)||(io_list.size() != 0)||(ready_list.size() != 0)){ 
+		
+		//before the tick
 		if (wait_list.size() != 0){
 				for (int i = wait_list.size()-1; i>= 0; i--){
 					if (wait_list[i].TARQ == 0){
@@ -190,7 +203,7 @@ void similator (
 						wait_list.erase(wait_list.begin()+i);
 					}
 				}
-
+				//this for loop belongs to during the tick
 				for (int i = wait_list.size()-1; i>= 0; i--){
 					if (wait_list[i].TARQ > 0){
 						wait_list[i].TARQ --;
@@ -226,6 +239,27 @@ void similator (
 			}
 		}
 		
+		if((impatient_prio)&&(cpu.size()!=0)){
+			if(ready_list.size()!=0){
+				if (cpu.front().PRIO > (ready_list.front().PRIO - (ready_list.front().age)/age_scale)){
+					cpu.front().age = 0;
+					schedule_function(&ready_list, cpu.front(), age_scale, weight_coef);
+					cpu.erase(cpu.begin());
+					quantum_time_c = 0;
+
+					cpu.push_back(ready_list.front());
+					ready_list.erase(ready_list.begin());
+
+					gantt_data new_data;
+					new_data.PID = cpu.front().PID;
+					new_data.time = timer;
+					(*gantt_data_list).push_back(new_data);
+				}
+			}
+		}
+
+		
+		//during the tick
 		timer++;
 
 		//wait time count ++ for all processes in the ready list
@@ -246,8 +280,12 @@ void similator (
 						io_list[i].current_burst++;//current_burst is increased when an io burst is finished
 
 						io_list[i].age = 0;//reset age before entering the ready lisst
+
+						io_ready_buffer=io_list[i];
+						io_ready_ready = true;
 						//-----------------------algorithm--------------------------------
-						schedule_function(&ready_list, io_list[i], age_scale, weight_coef);
+						//schedule_function(&ready_list, io_list[i], age_scale, weight_coef);
+
 						io_list.erase(io_list.begin()+i);
 					}
 				}
@@ -268,7 +306,9 @@ void similator (
 						(*finish_list).push_back(cpu.front());
 					}
 					else{
-						io_list.push_back(cpu.front());
+						//io_list.push_back(cpu.front());
+						cpu_io_ready = true;
+						cpu_io_buffer = cpu.front();
 					}
 
 					//record gantt data
@@ -286,9 +326,12 @@ void similator (
 				//if quantum time count is up, given the round_robin algorithm is being used
 				if((quantum_time_c>=quantum_time)&&(round_robin)){
 					cpu.front().age = 0;//reset age before entering the ready lisst
+
+					cpu_ready_buffer = cpu.front();
+					cpu_ready_ready = true;
 					//going back to ready_list through the schedule function
 					//-----------------------algorithm--------------------------------
-					schedule_function(&ready_list, cpu.front(), age_scale, weight_coef);
+					//schedule_function(&ready_list, cpu.front(), age_scale, weight_coef);
 					
 					//record gantt data
 					gantt_data new_data;
@@ -302,7 +345,22 @@ void similator (
 				}
 			}
 
+			//after the tick
+			if (io_ready_ready){
+				schedule_function(&ready_list, io_ready_buffer, age_scale, weight_coef);
+				io_ready_ready = false;
+			}
+
+			if (cpu_ready_ready&&round_robin){
+				schedule_function(&ready_list,cpu_ready_buffer, age_scale, weight_coef);
+				cpu_ready_ready = false;
+			}
 			
+			if (cpu_io_ready){
+				io_list.push_back(cpu_io_buffer);
+				cpu_io_ready = false;
+			}
+
 		
 	}
 	//ready_list.insert(ready_list.begin(), finish_list.begin(), finish_list.end());
@@ -332,25 +390,35 @@ void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list
 
 int set_parameters (
 	int algorithm_index,
-	bool *round_robin){
+	bool *round_robin,
+	bool *impatient_prio){
 		*round_robin = false;
-		if (algorithm_index == 0){
+		*impatient_prio = false;
+		if (algorithm_index == 0){//FCFS
 			//*age_scale = 0;
 			//*round_robin = false;
 			return 0;
 		}
-		else if(algorithm_index == 1){
+		else if(algorithm_index == 1){//npr prio
 			return 1;
 		}
-		else if(algorithm_index == 2){
+		else if(algorithm_index == 2){//round robin
 			*round_robin = true;
 			return 0;
 		}
-		else if(algorithm_index == 3){
+		else if(algorithm_index == 3){//sjf
 			return 2;
 		}
-		else if(algorithm_index == 4){
+		else if(algorithm_index == 4){//SPB 
 			return 3;
+		}
+		else if(algorithm_index == 5){//impatient prio
+			*impatient_prio = true;
+			return 1;
+		}
+		else if(algorithm_index == 6){//polite prio
+			*round_robin = true;
+			return 1;
 		}
 		else{
 			return 0;
