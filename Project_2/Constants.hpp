@@ -12,8 +12,8 @@
 #define DEFAULT_FILE_PATH "c:/example.txt"
 
 //Debug Switches
-//#define DEBUG_PROCESS
-//#define DEBUG_PROCESSFILE
+#define DEBUG_PROCESS
+#define DEBUG_PROCESSFILE
 #define DEBUG_SIMULATOR
 
 enum Algorithms {

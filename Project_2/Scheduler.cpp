@@ -3,7 +3,7 @@
 class Scheduler {
 
 public:
-	int nextProcessScheduled(vector<Process> processes, Algorithms mode) {
+	int nextProcess(vector<Process> processes, Algorithms mode) {
 		switch(mode)
 		{
 			case fifo:
@@ -15,7 +15,7 @@ public:
 	}
 
 	int fifoScheduler(vector<Process> processes) {
-		int index = 0;
+		int index = -1;
 		int earliestTarq = 4096;
 		for(unsigned int i = 0; i < processes.size(); i++) {
 			if(processes[i].getTarq() < earliestTarq && processes[i].isDone() == false) {
