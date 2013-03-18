@@ -1,0 +1,18 @@
+//Definitions
+#define MAX_CPU_BURST 100
+#define MAX_ATTRIBUTES MAX_CPU_BURST * 2 + PROC_ATTRIBUTES
+#define MAX_PROCESS 100
+ //PID TARQ PRIO TNCPU
+#define PROC_ATTRIBUTES 4
+
+//Settings
+#define DEFAULT_FILE_PATH "c:/example.txt"
+//#define DEBUG_PROCESS
+#define DEBUG_PROCESSFILE
+
+/*
+5 3 2 3 7 2 5 3	2
+2 0 7 2	5 4 2
+7 1 1 2 2 2 3
+11 23 12 1 3 4 5 1
+*/

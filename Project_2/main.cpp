@@ -1,19 +1,14 @@
 #include <iostream>
-#include <fstream>
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include "processt.hpp"
 #include "gantt_data.hpp"
+#include "Process.cpp"
+#include "ProcessFile.cpp"
 #include <vector>
 
 using namespace std;
-
-//#ifndef MAX_CPU_BURST 100
-	#define MAX_CPU_BURST 100
-//#endif
-//#define MAX_IO_BURST 100
-#define MAX_PROCESS 100
 
 processt all_process[MAX_PROCESS];
 
@@ -64,14 +59,42 @@ bool schedule2 (process_t *process_list, int process_c){
 }*/
 //=============================================================
 
+void main() {
+	vector<Process> Processes;
+	ProcessFile fileHandler;
 
-int main(){ 
+	fileHandler.setPath(DEFAULT_FILE_PATH);
+	while(fileHandler.endOfFile() == false) {
+		string line = fileHandler.getLine();
+		if(line.size() > PROC_ATTRIBUTES) {
+			Process newProcess(line);
+			Processes.push_back(newProcess);
+		}
+	}
+
+//Tests solely the Process class
+#if defined(DEBUG_PROCESS) 
+	Process Process1("1 2 3 4 5 6 7 8 9 10 11");
+	cout << Process1.toString() << endl;
+#endif
+
+//Tests the Processes read from the file handler
+#if defined(DEBUG_PROCESSFILE)  
+	for(unsigned int i = 0; i < Processes.size(); i++) {
+		cout << Processes[i].toString() << endl;
+	}
+#endif
+
+	cin.get();
+}
+
+int lolmain(){ 
 	ifstream myfile;
 	string line;
 	string path;
 	//cout << "Please enter the absolute path of the file: ";
 	//cin >> path;
-	path = "e:/example.txt";
+	path = "c:/example.txt";
 	myfile.open(path.c_str());
 	int line_counter = 0;
 	vector<processt> all_process;
