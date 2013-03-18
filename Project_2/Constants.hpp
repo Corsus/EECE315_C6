@@ -1,3 +1,6 @@
+#if !defined(CONSTANTS_HPP_)
+#define CONSTANTS_HPP_
+
 //Definitions
 #define MAX_CPU_BURST 100
 #define MAX_ATTRIBUTES MAX_CPU_BURST * 2 + PROC_ATTRIBUTES
@@ -7,12 +10,20 @@
 
 //Settings
 #define DEFAULT_FILE_PATH "c:/example.txt"
-//#define DEBUG_PROCESS
-#define DEBUG_PROCESSFILE
 
-/*
-5 3 2 3 7 2 5 3	2
-2 0 7 2	5 4 2
-7 1 1 2 2 2 3
-11 23 12 1 3 4 5 1
-*/
+//Debug Switches
+//#define DEBUG_PROCESS
+//#define DEBUG_PROCESSFILE
+#define DEBUG_SIMULATOR
+
+enum Algorithms {
+	fifo,
+	rr,
+	prio,
+	prePrio,
+	timeslicePrio,
+	sjf,
+	spb
+};
+
+#endif

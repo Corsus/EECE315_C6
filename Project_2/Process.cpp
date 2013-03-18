@@ -4,22 +4,36 @@
 #include <vector>
 #include "Constants.hpp"
 
+#if !defined(PROCESS_CPP_)
+#define PROCESS_CPP_
+
 using namespace std;
 
 class Process {
 public:
 	Process() {
-		stringToProcess("0 0 0 0"); //Sets all attributes to 0
+		Process("0 0 0 0"); //Sets all attributes to 0
 	}
 
 	Process(string values) {
 		stringToProcess(values);
+		this->currentCpuBurst = 0;
+		this->currentCpuCycle = 0;
+		this->currentIOBurst = 0;
+		this->currentIOCycle = 0;
+		this->processAge = 0;
+		this->waitTime = 0;
+		this->executionTime = 0;
+		this->totalTime = 0;
+		this->processing = false;
+		this->done = false;
+		this->inIO = false;
 	}
 
 	//Attaches string of values to this Process
 	void stringToProcess(string stringToProcess) {
 		vector<int> att;
-	
+		
 		splitString(stringToProcess, ' ', att);
 
 		//Assign first four attributes
@@ -38,13 +52,52 @@ public:
 				ioBurst.push_back(att[i]);
 			}
 		}
+
+		completionTime = 0;
+		for(unsigned int i = 0; i < cpuBurst.size(); i++)
+			completionTime += cpuBurst[i]; 
+	}
+
+	void process() {
+		processing = true;
+		this->executionTime++;
+		this->currentCpuBurst++;
+
+		if(currentCpuCycle < cpuBurst.size() && currentCpuBurst == cpuBurst[currentCpuCycle]) {
+			currentCpuCycle++;
+			currentCpuBurst = 0;
+			inIO = true;
+		}
+
+		if(executionTime == completionTime)
+			done = true;
+	}
+
+	void age() {
+		if (done == false && processing == false) {
+			this->processAge++;
+			this->waitTime++;
+			this->totalTime++;
+			if (inIO == true) {
+				currentIOBurst++;
+				if(currentIOBurst == ioBurst[currentIOCycle]) {
+					inIO = false;
+				}
+			}
+		}
+
+		processing = false;
+	}
+
+	int getAge() {
+		return this->processAge;
 	}
 
 	int getPid() {
 		return this->pid;
 	}
 
-	int getTarq() {
+	const int getTarq() {
 		return this->tarq;
 	}
 
@@ -54,6 +107,10 @@ public:
 
 	int getTncpu() {
 		return this->tncpu;
+	}
+
+	int isDone() {
+		return this->done;
 	}
 
 	string toString() {
@@ -72,7 +129,20 @@ public:
 
 		return stringBuilder;
 	}
-	
+
+	string statusString() {
+		string stringBuilder = "";
+		stringBuilder += " PID: " + to_string(pid);
+		stringBuilder += " Time Executed: " + to_string(executionTime);
+		stringBuilder += " Completion Time: " + to_string(completionTime);
+		stringBuilder += " Process Age: " + to_string(processAge);
+		stringBuilder += " Done: " + to_string(done);
+		stringBuilder += " TARQ: " + to_string(tarq);
+		stringBuilder += "\n";
+
+		return stringBuilder;
+	}
+
 private: 
 	//Default attributes
 	int pid;
@@ -80,16 +150,27 @@ private:
 	int prio;
 	int tncpu;
 	//Given bursts
+	int currentCpuBurst;
+	int currentCpuCycle;
 	vector<int> cpuBurst;
+	int currentIOBurst;
+	int currentIOCycle;
 	vector<int> ioBurst;
 	//Attributes to update upon execution
-	int currentBurst;
-	int waitTime;
 	int executionTime;
-	int turnaroundTime;
-	int age;
+	int completionTime;
+
+	
+	int waitTime;
+	
+	int totalTime;
+	int processAge;
 	int averageBurst;
 	int lastBurst;
+
+	bool processing;
+	bool done;
+	bool inIO;
 
 	vector<int> &splitString(const string &s, char delim, vector<int> &elems) 
 	{
@@ -101,3 +182,5 @@ private:
 		return elems;
 	}
 };
+
+#endif
