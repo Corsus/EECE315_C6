@@ -9,13 +9,15 @@
 
 using namespace std;
 
-//#define MAX_CPU_BURST 100
+//#ifndef MAX_CPU_BURST 100
+	#define MAX_CPU_BURST 100
+//#endif
 //#define MAX_IO_BURST 100
 #define MAX_PROCESS 100
 
 processt all_process[MAX_PROCESS];
 
-typedef void (*schedule_t) (vector<processt> *process_list, processt new_process, int arg);
+typedef void (*schedule_t) (vector<processt> *process_list, processt new_process, int age_scale, float weight_coef);
 int string_spliter(string, int*, string);
 processt string_parser(string);
 void similator (
@@ -25,7 +27,8 @@ void similator (
 	vector<gantt_data> *gantt_data_list, 
 	int age_scale,
 	bool round_robin,
-	int quantum_time
+	int quantum_time,
+	float weight_coef
 	);
 
 int set_parameters (
@@ -43,10 +46,10 @@ void test_function (vector<processt> *ready_list){
 //Algorithm Template
 //=============================================================
 
-void FCFS (vector<processt> *process_list, processt new_process, int arg);
-void priority_npr (vector<processt> *process_list, processt new_process, int arg);
-void SJF (vector<processt> *process_list, processt new_process, int arg);
-
+void FCFS (vector<processt> *process_list, processt new_process, int age_scale, float weight_coef);
+void priority_npr (vector<processt> *process_list, processt new_process, int age_scale, float weight_coef);
+void SJF (vector<processt> *process_list, processt new_process, int age_scale, float weight_coef);
+void SPB (vector<processt> *process_list, processt new_process, int age_scale, float weight_coef);
 /*
 bool schedule2 (process_t *process_list, int process_c){
 	process_t process_local[MAX_PROCESS];
@@ -75,7 +78,8 @@ int main(){
 	{
 		FCFS,
 		priority_npr,
-		SJF
+		SJF,
+		SPB
 	};
 	
 	if (myfile.is_open()){
@@ -91,15 +95,16 @@ int main(){
 	int age_scale = 20;//should be input by user
 	bool round_robin;
 	int quantum_time = 10;
-	int algorithm_index = set_parameters(0, &round_robin);
-
+	int algorithm_index = set_parameters(4, &round_robin);
+	float weight_coef =0.5 ;
 	similator(
 		all_process, schedule_functinos[algorithm_index], 
 		&finish_list, 
 		&gantt_data_list, 
 		age_scale, 
 		round_robin, 
-		quantum_time);
+		quantum_time,
+		weight_coef);
 	
 	result_display(&finish_list, &gantt_data_list);
 	cin.ignore(); 
@@ -138,6 +143,9 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	out_process.execution_time = 0;
 	out_process.turnaround_time = 0;
 	out_process.wait_time = 0;
+	out_process.age = 0;
+	out_process.average_burst = 0;
+	out_process.last_burst = 0;
 
 	for (int i = 4; i < total_att; i++){
 		if ((i%2) == 0){ 
@@ -160,7 +168,8 @@ void similator (
 	vector<gantt_data> *gantt_data_list, 
 	int age_scale,
 	bool round_robin,
-	int quantum_time
+	int quantum_time, 
+	float weight_coef
 	){
 	vector<processt> cpu;
 	vector<processt> io_list;
@@ -175,9 +184,9 @@ void similator (
 				for (int i = wait_list.size()-1; i>= 0; i--){
 					if (wait_list[i].TARQ == 0){
 
-						wait_list[i].age = 0; //reset age before entering the ready list
-						schedule_function(&ready_list,wait_list[i],age_scale);
-						//ready_list.push_back(wait_list[i]);//algorithm
+						//wait_list[i].age = 0; //reset age before entering the ready list
+						//-----------------------algorithm--------------------------------
+						schedule_function(&ready_list,wait_list[i],age_scale,weight_coef);
 						wait_list.erase(wait_list.begin()+i);
 					}
 				}
@@ -194,11 +203,12 @@ void similator (
 			if(ready_list.size()!=0){
 				cpu.push_back(ready_list.front());
 				ready_list.erase(ready_list.begin());
-				gantt_data new_data;
+
+				//for SPB, record the last burst before counting down the current cpu burst.
+				cpu.front().last_burst = cpu.front().CPU[cpu.front().current_burst];
 
 				//record gantt data
-				
-
+				gantt_data new_data;
 				new_data.PID = cpu.front().PID;
 				new_data.time = timer;
 				if(
@@ -236,8 +246,8 @@ void similator (
 						io_list[i].current_burst++;//current_burst is increased when an io burst is finished
 
 						io_list[i].age = 0;//reset age before entering the ready lisst
-						schedule_function(&ready_list, io_list[i], age_scale);
-						//ready_list.push_back(io_list[i]);//this is where the algorithm should go
+						//-----------------------algorithm--------------------------------
+						schedule_function(&ready_list, io_list[i], age_scale, weight_coef);
 						io_list.erase(io_list.begin()+i);
 					}
 				}
@@ -275,8 +285,10 @@ void similator (
 
 				//if quantum time count is up, given the round_robin algorithm is being used
 				if((quantum_time_c>=quantum_time)&&(round_robin)){
+					cpu.front().age = 0;//reset age before entering the ready lisst
 					//going back to ready_list through the schedule function
-					schedule_function(&ready_list, cpu.front(), age_scale);
+					//-----------------------algorithm--------------------------------
+					schedule_function(&ready_list, cpu.front(), age_scale, weight_coef);
 					
 					//record gantt data
 					gantt_data new_data;
@@ -337,18 +349,20 @@ int set_parameters (
 		else if(algorithm_index == 3){
 			return 2;
 		}
-
+		else if(algorithm_index == 4){
+			return 3;
+		}
 		else{
 			return 0;
 		}
 }
 		
 
-void FCFS (vector<processt> *process_list, processt new_process, int arg){
+void FCFS (vector<processt> *process_list, processt new_process, int arg, float weight_coef){
 	(*process_list).push_back(new_process);
 }
 
-void priority_npr (vector<processt> *process_list, processt new_process, int age_scale){
+void priority_npr (vector<processt> *process_list, processt new_process, int age_scale, float weight_coef){
 	int unsigned count = 0;
 	//bool inserted = false;
 	//if ((*process_list).size() > 0){
@@ -364,7 +378,7 @@ void priority_npr (vector<processt> *process_list, processt new_process, int age
 	return;
 }
 
-void SJF (vector<processt> *process_list, processt new_process, int age_scale){ 
+void SJF (vector<processt> *process_list, processt new_process, int age_scale, float weight_coef){ 
 	int unsigned count = 0;
 	while(count < (*process_list).size() ){
 			if (new_process.CPU[new_process.current_burst] < 
@@ -375,5 +389,25 @@ void SJF (vector<processt> *process_list, processt new_process, int age_scale){
 			count++;
 	}
 	(*process_list).push_back(new_process);
+	return;
+}
+
+void SPB (vector<processt> *process_list, processt new_process, int age_scale, float weight_coef){ 
+	int unsigned count = 0;
+	float next_burst;
+	float next_burst2;
+	if (new_process.current_burst != 0){
+		new_process.average_burst = (new_process.average_burst*(new_process.current_burst-1)+new_process.last_burst)/new_process.current_burst;
+	}
+	next_burst = weight_coef*new_process.last_burst + (1-weight_coef)*new_process.average_burst;
+	while(count < (*process_list).size() ){
+		next_burst2 = weight_coef*(*process_list)[count].last_burst + (1-weight_coef)*(*process_list)[count].average_burst;
+		if (next_burst < (next_burst2 - ((*process_list)[count].age)/age_scale)){
+			(*process_list).insert((*process_list).begin()+count, new_process);
+				return;
+			}
+			count++;
+		}
+		(*process_list).push_back(new_process);
 	return;
 }
