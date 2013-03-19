@@ -69,12 +69,76 @@ int main(){
 	ifstream myfile;
 	string line;
 	string path;
-	//cout << "Please enter the absolute path of the file: ";
-	//cin >> path;
-	path = "e:/example.txt";
-	myfile.open(path.c_str());
+	do{ 
+		cout << "Please enter the absolute path of the file: ";
+		cin >> path;
+		//path = "e:/example.txt";
+		myfile.open(path.c_str());
+	}while (!myfile.is_open());
+
+
 	int line_counter = 0;
 	vector<processt> all_process;
+	
+	while (myfile.good()){
+		getline (myfile,line);
+		all_process.push_back(string_parser(line));
+	};
+
+	myfile.close();//finish reading and parsing file
+
+	cout<<"Please select schedule algorithm:"<<endl;
+	cout<<"0 First Come First Serve"<<endl<<"1 Priority NPR"<<endl<<"2 Round Robin"<<endl<<"3 Shortest Job First"<<endl<<"4 Shortest Previous Burst"<<endl<<"5 Impatient Priority"<<endl<<"6 Polite Priority"<<endl;
+	//initialize parameters for similation
+	//0. FCFS
+	//4. SPB
+	//5. Impatient Prio
+	//6. Prio+RR
+	int algorithm_index;
+	vector<processt> finish_list;
+	vector<gantt_data> gantt_data_list;
+	int age_scale = 20;
+	bool round_robin;
+	int quantum_time = 10;
+	bool impatient_prio = true;
+	float weight_coef =0.5 ;
+
+	bool algorithm_check;
+	do{
+	cin>>algorithm_index;
+	algorithm_check = true;
+	if(algorithm_index == 0){}
+	else if(algorithm_index == 1){
+		cout<<"Please enter the age scale: ";
+		cin>>age_scale;
+	}
+	else if(algorithm_index == 2){
+		cout<<"Please enter the quantum time: ";
+		cin>>quantum_time;
+	}
+	else if(algorithm_index == 3){
+		cout<<"Please enter the age scale: ";
+		cin>>age_scale;
+	}
+	else if(algorithm_index == 4){
+		cout<<"Please enter the age scale: ";
+		cin>>age_scale;
+		cout<<"Please enter the weight coefficient in decimal: ";
+		cin>>weight_coef;
+	}
+	else if(algorithm_index == 5){
+		cout<<"Please enter the age scale: ";
+		cin>>age_scale;
+	}
+	else if(algorithm_index == 6){
+		cout<<"Please enter the age scale: ";
+		cin>>age_scale;
+	}
+	else{
+		algorithm_check = false;
+	}
+	}while(!algorithm_check);
+
 	
 	schedule_t schedule_functinos[] =
 	{
@@ -83,29 +147,9 @@ int main(){
 		SJF,
 		SPB
 	};
-	
-	if (myfile.is_open()){
-		while (myfile.good()){
-			getline (myfile,line);
-			all_process.push_back(string_parser(line));
-		};
-	}
-	myfile.close();
-	
-	//initialize parameters for similation
-	//0. FCFS
-	//4. SPB
-	//5. Impatient Prio
-	//6. Prio+RR
 
-	vector<processt> finish_list;
-	vector<gantt_data> gantt_data_list;
-	int age_scale = 20;//should be input by user
-	bool round_robin;
-	int quantum_time = 10;
-	bool impatient_prio = true;
-	int schedule_func_index = set_parameters(5, &round_robin, &impatient_prio);
-	float weight_coef =0.5 ;
+	int schedule_func_index = set_parameters(algorithm_index, &round_robin, &impatient_prio);
+	
 	similator(
 		all_process, schedule_functinos[schedule_func_index], 
 		&finish_list, 
