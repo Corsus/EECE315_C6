@@ -6,6 +6,7 @@
 #include "processt.hpp"
 #include "gantt_data.hpp"
 #include <vector>
+#define DEBUG
 
 using namespace std;
 
@@ -72,9 +73,12 @@ int main(){
 	string end_options;
 	do{
 	do{ 
+#if defined(DEBUG)
+		path = "c:/example.txt";
+#else
 		cout << "Please enter the absolute path of the file: ";
 		cin >> path;
-		//path = "e:/example.txt";
+#endif	
 		myfile.open(path.c_str());
 	}while (!myfile.is_open());
 
@@ -206,6 +210,11 @@ int string_spliter(string line, int *p_attributes, string delimiter){
 		}
 		prev = pos + 1;
 	}
+	if (prev < line.length()) {
+		string temp_str = line.substr(prev, temp_str.length() - prev);
+		p_attributes[att_count] = atoi(temp_str.c_str());
+		att_count++;
+	}
 	return att_count;
 }
 
@@ -215,7 +224,7 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	int cpu_c = 0;
 	int io_c = 0;
 	processt out_process;
-	total_att = string_spliter(line, att, " \t");
+	total_att = string_spliter(line, att, " \t\n");
 	out_process.PID = att[0];
 	out_process.TARQ = att[1];
 	out_process.PRIO = att[2];
