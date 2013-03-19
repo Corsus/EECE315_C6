@@ -6,15 +6,13 @@
 #include "processt.hpp"
 #include "gantt_data.hpp"
 #include <vector>
-#define DEBUG
+
+//#define DEBUG
+#define DEFAULT_PATH "C:/example.txt"
+#define MAX_CPU_BURST 100
+#define MAX_PROCESS 100
 
 using namespace std;
-
-//#ifndef MAX_CPU_BURST 100
-	#define MAX_CPU_BURST 100
-//#endif
-//#define MAX_IO_BURST 100
-#define MAX_PROCESS 100
 
 processt all_process[MAX_PROCESS];
 
@@ -74,7 +72,7 @@ int main(){
 	do{
 	do{ 
 #if defined(DEBUG)
-		path = "c:/example.txt";
+		path = DEFAULT_PATH;
 #else
 		cout << "Please enter the absolute path of the file: ";
 		cin >> path;
