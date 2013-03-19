@@ -84,7 +84,8 @@ int main(){
 	
 	while (myfile.good()){
 		getline (myfile,line);
-		all_process.push_back(string_parser(line));
+		if (line != "")
+			all_process.push_back(string_parser(line));
 	};
 
 	myfile.close();//finish reading and parsing file
@@ -214,7 +215,7 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	int cpu_c = 0;
 	int io_c = 0;
 	processt out_process;
-	total_att = string_spliter(line, att, " ");
+	total_att = string_spliter(line, att, " \t");
 	out_process.PID = att[0];
 	out_process.TARQ = att[1];
 	out_process.PRIO = att[2];
@@ -267,7 +268,7 @@ void similator (
 	bool io_ready_ready = false;
 	bool cpu_ready_ready = false;
 
-	while ((wait_list.size() != 0)||(cpu.size() != 0)||(io_list.size() != 0)||(ready_list.size() != 0)){ 
+	while ((wait_list.size() != 0)||(cpu.size() != 0)||(io_list.size() != 0)||(ready_list.size() != 0) || cpu_io_ready || io_ready_ready || cpu_ready_ready){ 
 		
 		//before the tick
 		if (wait_list.size() != 0){
@@ -459,7 +460,19 @@ void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list
 	for (int unsigned i=0; i<(*gd_list).size(); i++){
 		cout <<"CPU Time: "<< (*gd_list)[i].time<<", PID: "<<(*gd_list)[i].PID<<endl;
 	}
-	
+
+	cout << endl;
+
+	for (int unsigned i=0; i < (*gd_list).size(); i++){
+		int BurstTime;
+		cout << (*gd_list)[i].PID;
+		if (i+1 < (*gd_list).size()) {
+			BurstTime = (*gd_list)[i+1].time - (*gd_list)[i].time;
+			for (int unsigned i=0; i < BurstTime; i++)
+				cout << '*';
+		}
+	}
+	cout << "\n\n";
 }
 
 int set_parameters (
