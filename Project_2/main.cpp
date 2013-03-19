@@ -19,9 +19,9 @@ using namespace std;
 processt all_process[MAX_PROCESS];
 
 typedef void (*schedule_t) (vector<processt> *process_list, processt new_process, int age_scale, float weight_coef);
-int string_spliter(string, int*, string);
+int string_splitter(string, int*, string);
 processt string_parser(string);
-void similator (
+void simulator (
 	vector<processt> process_list, 
 	schedule_t schedule_function, 
 	vector<processt> *finish_list, 
@@ -96,7 +96,7 @@ int main(){
 	do{
 	cout<<"Please select schedule algorithm:"<<endl;
 	cout<<"0 First Come First Serve"<<endl<<"1 Priority NPR"<<endl<<"2 Round Robin"<<endl<<"3 Shortest Job First"<<endl<<"4 Shortest Previous Burst"<<endl<<"5 Impatient Priority"<<endl<<"6 Polite Priority"<<endl;
-	//initialize parameters for similation
+	//initialize parameters for simulation
 	//0. FCFS
 	//4. SPB
 	//5. Impatient Prio
@@ -170,7 +170,7 @@ int main(){
 
 	int schedule_func_index = set_parameters(algorithm_index, &round_robin, &impatient_prio);
 	
-	similator(
+	simulator(
 		all_process, schedule_functinos[schedule_func_index], 
 		&finish_list, 
 		&gantt_data_list, 
@@ -199,7 +199,7 @@ int main(){
 	return 0;
 }
 
-int string_spliter(string line, int *p_attributes, string delimiter){
+int string_splitter(string line, int *p_attributes, string delimiter){
 	size_t prev = 0, pos;
 	int att_count = 0;
 	while ((pos = line.find_first_of(delimiter, prev)) != string::npos){
@@ -224,7 +224,7 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	int cpu_c = 0;
 	int io_c = 0;
 	processt out_process;
-	total_att = string_spliter(line, att, " \t\n");
+	total_att = string_splitter(line, att, " \t\n");
 	out_process.PID = att[0];
 	out_process.TARQ = att[1];
 	out_process.PRIO = att[2];
@@ -252,7 +252,7 @@ processt string_parser(string line){//, process_t *out_process, int p_index){
 	//out_process[p_index].TNCPU = att[3];
 }
 
-void similator (
+void simulator (
 	vector<processt> wait_list, 
 	schedule_t schedule_function, 
 	vector<processt> *finish_list, 
