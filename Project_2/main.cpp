@@ -133,6 +133,8 @@ int main(){
 	else if(algorithm_index == 6){
 		cout<<"Please enter the age scale: ";
 		cin>>age_scale;
+		cout<<"Please enter the quantum time: ";
+		cin>>quantum_time;
 	}
 	else{
 		algorithm_check = false;
