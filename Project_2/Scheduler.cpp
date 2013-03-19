@@ -43,22 +43,35 @@ public:
 	}
 
 	int rrAlgorithm(vector<Process> processes) {
+		int index = -1;
+		return index;
 	}
 
 	int prioAlgorithm(vector<Process> processes) {
+		int index = -1;
+		return index;
 	}
 
 	int prePrioAlgorithm(vector<Process> processes) {
+		int index = -1;
+		return index;
 	}
 
 	int timeslicePrioAlgorithm(vector<Process> processes) {
+		int index = -1;
+		return index;
 	}
 
 	int sjfAlgorithm(vector<Process> processes) {
+		int index = -1;
+		return index;
 	}
 
 	int spbAlgorithm(vector<Process> processes) {
+		int index = -1;
+		return index;
 	}
+
 private:
 	int timeQuantum;
 	vector<Process> processes;

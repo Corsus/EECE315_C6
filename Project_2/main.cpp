@@ -22,7 +22,7 @@ void main() {
 	cout << "Please enter a set time quantum: \n";
 	cin >> timeQuantum;
 	cout << "Please select a scheduling method: \n";
-	cout << "1 - FIFO \n 2 - RR \n 3 - PRIO \n 4 - PrePRIO \n 5 - TimeSlicePRIO \n 6 - SJF \n 7 - SPB \n";
+	cout << " 1 - FIFO \n 2 - RR \n 3 - PRIO \n 4 - PrePRIO \n 5 - TimeSlicePRIO \n 6 - SJF \n 7 - SPB \n";
 	cin >> tempMode;
 	mode = (Algorithms)tempMode;
 #else

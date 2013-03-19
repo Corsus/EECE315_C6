@@ -12,7 +12,7 @@
 #define DEFAULT_FILE_PATH "c:/example.txt"
 #define DEFAULT_TIME_QUANTUM 10
 #define DEFAULT_MODE fifo
-#define USER_INPUT
+//#define USER_INPUT
 
 //Debug Switches
 #define DEBUG_PROCESS

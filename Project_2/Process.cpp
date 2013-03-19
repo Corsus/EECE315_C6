@@ -74,16 +74,19 @@ public:
 	}
 
 	void age() {
+		this->totalTime++;
 		if (done == false && processing == false) {
-			this->processAge++;
-			this->waitTime++;
-			this->totalTime++;
 			if (inIO == true) {
 				currentIOBurst++;
 				if(currentIOBurst == ioBurst[currentIOCycle]) {
 					inIO = false;
 				}
 			}
+			else {
+				this->processAge++;
+				this->waitTime++;
+			}
+
 		}
 
 		processing = false;
@@ -160,7 +163,6 @@ private:
 	int executionTime;
 	int completionTime;
 
-	
 	int waitTime;
 	
 	int totalTime;
