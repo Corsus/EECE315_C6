@@ -92,13 +92,19 @@ int main(){
 	}
 	myfile.close();
 	
+	//initialize parameters for similation
+	//0. FCFS
+	//4. SPB
+	//5. Impatient Prio
+	//6. Prio+RR
+
 	vector<processt> finish_list;
 	vector<gantt_data> gantt_data_list;
 	int age_scale = 20;//should be input by user
 	bool round_robin;
 	int quantum_time = 10;
 	bool impatient_prio = true;
-	int schedule_func_index = set_parameters(6, &round_robin, &impatient_prio);
+	int schedule_func_index = set_parameters(5, &round_robin, &impatient_prio);
 	float weight_coef =0.5 ;
 	similator(
 		all_process, schedule_functinos[schedule_func_index], 
@@ -184,7 +190,7 @@ void similator (
 	int timer = 0;
 
 	processt cpu_io_buffer;//buffer between cpu to io;
-	processt io_ready_buffer;
+	vector<processt> io_ready_buffer;
 	processt cpu_ready_buffer;
 	bool cpu_io_ready = false;//indicates whether the buffer is ready
 	bool io_ready_ready = false;
@@ -195,18 +201,12 @@ void similator (
 		//before the tick
 		if (wait_list.size() != 0){
 				for (int i = wait_list.size()-1; i>= 0; i--){
-					if (wait_list[i].TARQ == 0){
+					if (wait_list[i].TARQ == timer){
 
 						//wait_list[i].age = 0; //reset age before entering the ready list
 						//-----------------------algorithm--------------------------------
 						schedule_function(&ready_list,wait_list[i],age_scale,weight_coef);
 						wait_list.erase(wait_list.begin()+i);
-					}
-				}
-				//this for loop belongs to during the tick
-				for (int i = wait_list.size()-1; i>= 0; i--){
-					if (wait_list[i].TARQ > 0){
-						wait_list[i].TARQ --;
 					}
 				}
 			}
@@ -241,7 +241,7 @@ void similator (
 		
 		if((impatient_prio)&&(cpu.size()!=0)){
 			if(ready_list.size()!=0){
-				if (cpu.front().PRIO > (ready_list.front().PRIO - (ready_list.front().age)/age_scale)){
+				if ((cpu.front().PRIO - (cpu.front().age)/age_scale) > (ready_list.front().PRIO - (ready_list.front().age)/age_scale)){
 					cpu.front().age = 0;
 					schedule_function(&ready_list, cpu.front(), age_scale, weight_coef);
 					cpu.erase(cpu.begin());
@@ -281,7 +281,7 @@ void similator (
 
 						io_list[i].age = 0;//reset age before entering the ready lisst
 
-						io_ready_buffer=io_list[i];
+						io_ready_buffer.push_back(io_list[i]);
 						io_ready_ready = true;
 						//-----------------------algorithm--------------------------------
 						//schedule_function(&ready_list, io_list[i], age_scale, weight_coef);
@@ -325,7 +325,7 @@ void similator (
 
 				//if quantum time count is up, given the round_robin algorithm is being used
 				if((quantum_time_c>=quantum_time)&&(round_robin)){
-					cpu.front().age = 0;//reset age before entering the ready lisst
+					//cpu.front().age = 0;//reset age before entering the ready lisst
 
 					cpu_ready_buffer = cpu.front();
 					cpu_ready_ready = true;
@@ -347,7 +347,10 @@ void similator (
 
 			//after the tick
 			if (io_ready_ready){
-				schedule_function(&ready_list, io_ready_buffer, age_scale, weight_coef);
+				for (int i = io_ready_buffer.size()-1; i >= 0; i--){
+					schedule_function(&ready_list, io_ready_buffer[i], age_scale, weight_coef);
+				}
+				io_ready_buffer.clear();
 				io_ready_ready = false;
 			}
 
