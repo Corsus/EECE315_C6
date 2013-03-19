@@ -69,6 +69,8 @@ int main(){
 	ifstream myfile;
 	string line;
 	string path;
+	string end_options;
+	do{
 	do{ 
 		cout << "Please enter the absolute path of the file: ";
 		cin >> path;
@@ -86,7 +88,7 @@ int main(){
 	};
 
 	myfile.close();//finish reading and parsing file
-
+	do{
 	cout<<"Please select schedule algorithm:"<<endl;
 	cout<<"0 First Come First Serve"<<endl<<"1 Priority NPR"<<endl<<"2 Round Robin"<<endl<<"3 Shortest Job First"<<endl<<"4 Shortest Previous Burst"<<endl<<"5 Impatient Priority"<<endl<<"6 Polite Priority"<<endl;
 	//initialize parameters for similation
@@ -95,6 +97,7 @@ int main(){
 	//5. Impatient Prio
 	//6. Prio+RR
 	int algorithm_index;
+	string algorithm_input;
 	vector<processt> finish_list;
 	vector<gantt_data> gantt_data_list;
 	int age_scale = 20;
@@ -105,38 +108,48 @@ int main(){
 
 	bool algorithm_check;
 	do{
-	cin>>algorithm_index;
+	//cout<<"sup"<<endl;
+	cin>>algorithm_input;
 	algorithm_check = true;
-	if(algorithm_index == 0){}
-	else if(algorithm_index == 1){
+	if(algorithm_input == "0"){
+		algorithm_index = 0;
+	}
+	else if(algorithm_input == "1"){
+		algorithm_index = 1;
 		cout<<"Please enter the age scale: ";
 		cin>>age_scale;
 	}
-	else if(algorithm_index == 2){
+	else if(algorithm_input == "2"){
+		algorithm_index = 2;
 		cout<<"Please enter the quantum time: ";
 		cin>>quantum_time;
 	}
-	else if(algorithm_index == 3){
+	else if(algorithm_input == "3"){
+		algorithm_index = 3;
 		cout<<"Please enter the age scale: ";
 		cin>>age_scale;
 	}
-	else if(algorithm_index == 4){
+	else if(algorithm_input == "4"){
+		algorithm_index = 4;
 		cout<<"Please enter the age scale: ";
 		cin>>age_scale;
 		cout<<"Please enter the weight coefficient in decimal: ";
 		cin>>weight_coef;
 	}
-	else if(algorithm_index == 5){
+	else if(algorithm_input == "5"){
+		algorithm_index = 5;
 		cout<<"Please enter the age scale: ";
 		cin>>age_scale;
 	}
-	else if(algorithm_index == 6){
+	else if(algorithm_input == "6"){
+		algorithm_index = 6;
 		cout<<"Please enter the age scale: ";
 		cin>>age_scale;
 		cout<<"Please enter the quantum time: ";
 		cin>>quantum_time;
 	}
 	else{
+		cout<<"Please select a schedule algorithm"<<endl;
 		algorithm_check = false;
 	}
 	}while(!algorithm_check);
@@ -163,8 +176,20 @@ int main(){
 		impatient_prio);
 	
 	result_display(&finish_list, &gantt_data_list);
-	cin.ignore(); 
-    cin.get();
+
+
+	cout<<"All processes are finished executing."<<endl;
+	cout<<"Please choose from the following options: "<<endl;
+
+	
+	cout<<"0: use the existing process data to run another schedule algorithm"<<endl;
+	cout<<"1: start over by importing another file"<<endl;
+	cout<<"others: quit"<<endl;
+	cin>>end_options;
+	}while(end_options == "0");
+	}while(end_options == "1");
+	//cin.ignore(); 
+    //cin.get();
 	cout<<"terminating..."<<endl;
 	return 0;
 }
