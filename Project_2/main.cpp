@@ -28,7 +28,8 @@ void simulator (
 	bool round_robin,
 	int quantum_time,
 	float weight_coef,
-	bool impatient_prio
+	bool impatient_prio,
+	int *total_time
 	);
 
 int set_parameters (
@@ -36,7 +37,7 @@ int set_parameters (
 	bool *round_robin,
 	bool *impatient_prio);
 
-void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list);
+void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list, int total_time);
 /*
 void test_function (vector<processt> *ready_list){
 	(*ready_list).front().PID = 300;
@@ -108,6 +109,7 @@ int main(){
 	int quantum_time = 10;
 	bool impatient_prio = true;
 	float weight_coef =0.5 ;
+	int total_time = 0;
 
 	bool algorithm_check;
 	do{
@@ -176,9 +178,10 @@ int main(){
 		round_robin, 
 		quantum_time,
 		weight_coef,
-		impatient_prio);
+		impatient_prio,
+		&total_time);
 	
-	result_display(&finish_list, &gantt_data_list);
+	result_display(&finish_list, &gantt_data_list, total_time);
 
 
 	cout<<"All processes are finished executing."<<endl;
@@ -259,7 +262,8 @@ void simulator (
 	bool round_robin,
 	int quantum_time, 
 	float weight_coef,
-	bool impatient_prio
+	bool impatient_prio,
+	int *total_time
 	){
 	vector<processt> cpu;
 	vector<processt> io_list;
@@ -449,15 +453,20 @@ void simulator (
 		
 	}
 	//ready_list.insert(ready_list.begin(), finish_list.begin(), finish_list.end());
+	*total_time = timer;
 	return;
 }
 
-void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list){
+void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list, int total_time){
+	int total_wait_time = 0;
+	//float average_wait_time;
+	float total_process = (float)(*process_list).size();
 	for(int i=0; i != (*process_list).size(); i++){
 		cout <<"Process "<<(*process_list)[i].PID<<", ";
 		cout <<"execution Time: "<<(*process_list)[i].execution_time<<", ";
 		cout <<"wait time: "<<(*process_list)[i].wait_time<<", ";
-		cout <<"turnaround time: "<<(*process_list)[i].turnaround_time<<endl;
+		cout <<"turnaround time: "<<(*process_list)[i].execution_time + (*process_list)[i].wait_time<<endl;
+		total_wait_time = (*process_list)[i].wait_time;
 		/*
 		cout <<"CPU/IO Burst: ";
 		for (int j=0; j<all_process[i].TNCPU; j++){
@@ -466,7 +475,9 @@ void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list
 				cout <<all_process[i].IO[j]<<" ";
 		}*/
 	}
-	cout <<"draft gantt chat: "<<endl;
+	cout<<"Average Waiting Time: "<<total_wait_time/total_process<<endl;
+	cout<<"Throughput: "<<total_process / (float)total_time;
+	cout <<"Gantt chat data: "<<endl;
 	for (int unsigned i=0; i<(*gd_list).size(); i++){
 		cout <<"CPU Time: "<< (*gd_list)[i].time<<", PID: "<<(*gd_list)[i].PID<<endl;
 	}
