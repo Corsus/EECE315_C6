@@ -12,7 +12,7 @@ struct processt {
 	int TNCPU;
 	int CPU[MAX_CPU_BURST];
 	int IO[MAX_CPU_BURST-1];
-	int current_burst; //indicates the current CPU burst, set to 0 if no burst has occured 
+	int current_burst;
 	int wait_time;
 	int execution_time;
 	int turnaround_time;
