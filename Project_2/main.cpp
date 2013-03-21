@@ -37,7 +37,7 @@ int set_parameters (
 	bool *round_robin,
 	bool *impatient_prio);
 
-void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list, int total_time);
+void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list, int total_time, ofstream *outfile);
 /*
 void test_function (vector<processt> *ready_list){
 	(*ready_list).front().PID = 300;
@@ -67,8 +67,10 @@ bool schedule2 (process_t *process_list, int process_c){
 
 int main(){ 
 	ifstream myfile;
+	ofstream outfile;
 	string line;
 	string path;
+	string out_path;
 	string end_options;
 	do{
 	do{ 
@@ -80,7 +82,17 @@ int main(){
 #endif	
 		myfile.open(path.c_str());
 	}while (!myfile.is_open());
-
+	do{
+	cout<<"Please enter the absolute path and name of the output file, make sure to use a different name and path from the input file ";
+	cin>>out_path;
+	}while(out_path == path);
+	//out_path = "e:/testout.txt";
+	//string test_string = "test\n";
+	outfile.open(out_path.c_str());
+	//outfile.write(test_string, 2);
+	//outfile.write("sup",3);
+	//outfile<<test_string;
+	//outfile.close();
 
 	int line_counter = 0;
 	vector<processt> all_process;
@@ -180,8 +192,8 @@ int main(){
 		weight_coef,
 		impatient_prio,
 		&total_time);
-	
-	result_display(&finish_list, &gantt_data_list, total_time);
+	//outfile.open(out_path.c_str());
+	result_display(&finish_list, &gantt_data_list, total_time,  &outfile);
 
 
 	cout<<"All processes are finished executing."<<endl;
@@ -196,6 +208,7 @@ int main(){
 	}while(end_options == "1");
 	//cin.ignore(); 
     //cin.get();
+	outfile.close();
 	cout<<"terminating..."<<endl;
 	return 0;
 }
@@ -388,7 +401,7 @@ void simulator (
 				if (cpu.front().CPU[cpu.front().current_burst] == 0){
 					//if all bursts are finished 
 					if (cpu.front().current_burst>=(cpu.front().TNCPU-1)){
-						cpu.front().turnaround_time = timer;//save the current time as turnaround time
+						cpu.front().turnaround_time = timer - cpu.front().TARQ;//save the current time as turnaround time
 						(*finish_list).push_back(cpu.front());
 					}
 					else{
@@ -457,15 +470,23 @@ void simulator (
 	return;
 }
 
-void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list, int total_time){
+void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list, int total_time, ofstream *outfile){
 	int total_wait_time = 0;
+	//ofstream outfile;
+	//(*outfile).open(out_path.c_str());
 	//float average_wait_time;
 	float total_process = (float)(*process_list).size();
 	for(int i=0; i != (*process_list).size(); i++){
 		cout <<"Process "<<(*process_list)[i].PID<<", ";
 		cout <<"execution Time: "<<(*process_list)[i].execution_time<<", ";
 		cout <<"wait time: "<<(*process_list)[i].wait_time<<", ";
-		cout <<"turnaround time: "<<(*process_list)[i].execution_time + (*process_list)[i].wait_time<<endl;
+		cout <<"turnaround time: "<<(*process_list)[i].turnaround_time<<endl;
+
+		(*outfile) <<"Process "<<(*process_list)[i].PID<<", ";
+		(*outfile) <<"execution Time: "<<(*process_list)[i].execution_time<<", ";
+		(*outfile) <<"wait time: "<<(*process_list)[i].wait_time<<", ";
+		(*outfile) <<"turnaround time: "<<(*process_list)[i].turnaround_time<<endl;
+
 		total_wait_time = (*process_list)[i].wait_time;
 		/*
 		cout <<"CPU/IO Burst: ";
@@ -478,22 +499,34 @@ void result_display (vector<processt> *process_list, vector<gantt_data> *gd_list
 	cout<<"Average Waiting Time: "<<total_wait_time/total_process<<endl;
 	cout<<"Throughput: "<<total_process / (float)total_time;
 	cout <<"Gantt chat data: "<<endl;
+
+	(*outfile)<<"Average Waiting Time: "<<total_wait_time/total_process<<endl;
+	(*outfile)<<"Throughput: "<<total_process / (float)total_time<<endl;
+	(*outfile) <<"Gantt chat data: "<<endl;
+
 	for (int unsigned i=0; i<(*gd_list).size(); i++){
 		cout <<"CPU Time: "<< (*gd_list)[i].time<<", PID: "<<(*gd_list)[i].PID<<endl;
+
+		(*outfile) <<"CPU Time: "<< (*gd_list)[i].time<<", PID: "<<(*gd_list)[i].PID<<endl;
+
 	}
 
 	cout << endl;
+	(*outfile) << endl;
 
 	for (int unsigned i=0; i < (*gd_list).size(); i++){
 		int BurstTime;
 		cout << (*gd_list)[i].PID;
+		//outfile << (*gd_list)[i].PID;
 		if (i+1 < (*gd_list).size()) {
 			BurstTime = (*gd_list)[i+1].time - (*gd_list)[i].time;
 			for (int i=0; i < BurstTime; i++)
 				cout << '*';
+				//outfile << '*';
 		}
 	}
 	cout << "\n\n";
+	(*outfile) << "\n\n";
 }
 
 int set_parameters (
